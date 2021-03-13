@@ -1,2 +1,2 @@
 # garm
-Dynamicly-typed, interpreted language with C-like syntax
+Dynamically-typed, interpreted language with C-like syntax
