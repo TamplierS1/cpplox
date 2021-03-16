@@ -32,6 +32,7 @@ private:
     void string();
     void number();
     void identifier();
+    void block_comment();
 
     void add_token(TokenType type, const OptionalLiteral& literal);
     // returns true if scanner is at the end of file
