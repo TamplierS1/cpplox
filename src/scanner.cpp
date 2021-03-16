@@ -212,10 +212,16 @@ void Scanner::identifier()
 
 void Scanner::block_comment()
 {
-    while (peek() != '*' && !is_end())
+    while (peek() != '*')
     {
+        // if we run out of characters
+        if (is_end())
+        {
+            ErrorHandler::get_instance().error(m_line, "Unclosed block comment.");
+            return;
+        }
         if (peek() == '\n') m_line++;
-        // handle block comments
+        // handle nested comments
         if (peek_next() == '*')
             if (peek() == '/')
             {
