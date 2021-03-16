@@ -121,6 +121,10 @@ void Scanner::scan_token()
                 while (peek() != '\n' && !is_end())
                     advance();
             }
+            else if (match('*'))  // block comment
+            {
+                block_comment();
+            }
             else
                 add_token(TokenType::SLASH, std::nullopt);
             break;
@@ -137,8 +141,7 @@ void Scanner::scan_token()
             break;
         default:
             // we encountered a number literal
-            if (std::isdigit(c))
-                number();
+            if (std::isdigit(c)) number();
             // we encountered an identifier
             else if (std::isalpha(c))
                 identifier();
@@ -200,11 +203,35 @@ void Scanner::identifier()
     // the identifier you encountered is a keyword
     if (type_opt.has_value())
         type = type_opt.value();
-    else // or it's just an identifier
+    else  // or it's just an identifier
         type = TokenType::IDENTIFIER;
 
     // it doesn't have any literal value - so just std::nullopt
     add_token(type, std::nullopt);
+}
+
+void Scanner::block_comment()
+{
+    while (peek() != '*' && !is_end())
+    {
+        if (peek() == '\n') m_line++;
+        // handle block comments
+        if (peek_next() == '*')
+            if (peek() == '/')
+            {
+                // eat '/*'
+                advance();
+                advance();
+
+                block_comment();
+            }
+
+        advance();
+    }
+
+    // eat '*/'
+    advance();
+    advance();
 }
 
 void Scanner::add_token(TokenType type, const OptionalLiteral& literal)
@@ -263,6 +290,5 @@ std::optional<TokenType> Scanner::str_to_keyword(const std::string& str)
         return std::nullopt;
     }
 }
-
 
 }  // namespace garm
