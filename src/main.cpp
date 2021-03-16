@@ -1,7 +1,22 @@
-#include <iostream>
+#include "scanner.h"
 
-int main()
+int main(int argc, char** argv)
 {
-    std::cout << "Hello world";
+    garm::Scanner scanner;
+
+    if (argc > 2)
+    {
+        std::cout << "Usage: garm [script]" << '\n';
+        std::exit(64);
+    }
+    else if (argc == 2)
+    {
+        scanner.run_file(argv[1]);
+    }
+    else
+    {
+        scanner.run_prompt();
+    }
+
     return 0;
 }
