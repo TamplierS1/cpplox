@@ -8,6 +8,7 @@
 
 #include "error_handler.h"
 #include "token.h"
+#include "value.h"
 
 namespace garm
 {
@@ -34,7 +35,7 @@ private:
     void identifier();
     void block_comment();
 
-    void add_token(TokenType type, const OptionalLiteral& literal);
+    void add_token(TokenType type, const Value& literal);
     // returns true if scanner is at the end of file
     [[nodiscard]] bool is_end() const;
     // returns true if the next char in the input equals *expected*

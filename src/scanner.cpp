@@ -102,7 +102,7 @@ void Scanner::scan_token()
             add_token(TokenType::STAR, std::nullopt);
             break;
         case '!':
-            // we handle operators like !=, == this way
+            // handle operators like !=, ==
             add_token(match('=') ? TokenType::BANG_EQUAL : TokenType::BANG, std::nullopt);
             break;
         case '=':
@@ -240,7 +240,7 @@ void Scanner::block_comment()
     advance();
 }
 
-void Scanner::add_token(TokenType type, const OptionalLiteral& literal)
+void Scanner::add_token(TokenType type, const Value& literal)
 {
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
     m_tokens.emplace_back(type, lexeme, literal, m_line);
