@@ -14,6 +14,7 @@
 namespace garm
 {
 
+// Prints a syntax tree for a given expression
 class AstPrinter : public ast::Visitor
 {
 public:

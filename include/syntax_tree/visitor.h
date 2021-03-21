@@ -10,6 +10,7 @@ class Grouping;
 class Literal;
 class Unary;
 
+// Interface that represents an operation executed on the given expressions
 class Visitor
 {
 public:

@@ -49,7 +49,7 @@ std::string AstPrinter::parenthesize(const std::string& name, std::vector<std::s
                 break;
             default:
                 ErrorHandler::get_instance().debug_error("Not every type was handled");
-                return "";
+                break;
         }
     }
     out += ")";
