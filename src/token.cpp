@@ -3,7 +3,7 @@
 namespace garm::types
 {
 
-Token::Token(TokenType type, std::string lexeme, OptionalLiteral literal, unsigned int line)
+Token::Token(TokenType type, std::string lexeme, Value literal, unsigned int line)
     : m_token_type(type)
     , m_lexeme(std::move(lexeme))
     , m_literal(std::move(literal))
@@ -81,7 +81,7 @@ std::string Token::get_lexeme() const
     return m_lexeme;
 }
 
-OptionalLiteral Token::get_literal() const
+Value Token::get_literal() const
 {
     return m_literal;
 }

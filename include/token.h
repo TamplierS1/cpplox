@@ -4,7 +4,7 @@
 #include <utility>
 #include <map>
 
-#include "literal.h"
+#include "value.h"
 
 namespace garm::types
 {
@@ -62,20 +62,20 @@ enum class TokenType
 class Token
 {
 public:
-    Token(TokenType type, std::string lexeme, OptionalLiteral literal, unsigned int line);
+    Token(TokenType type, std::string lexeme, Value literal, unsigned int line);
 
     std::string to_string();
 
     [[nodiscard]] TokenType get_token_type() const;
     [[nodiscard]] std::string get_lexeme() const;
-    [[nodiscard]] OptionalLiteral get_literal() const;
+    [[nodiscard]] Value get_literal() const;
     [[nodiscard]] unsigned int get_line() const;
 private:
     static std::optional<std::string> token_to_string(TokenType token);
 
     TokenType m_token_type;
     std::string m_lexeme;
-    OptionalLiteral m_literal = std::nullopt;
+    Value m_literal;
     unsigned int m_line;
 
 };
