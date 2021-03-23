@@ -1,7 +1,10 @@
 #ifndef ERROR_HANDLER_H
 #define ERROR_HANDLER_H
 
+#include <exception>
 #include <iostream>
+
+#include "token.h"
 
 namespace garm
 {
@@ -17,7 +20,9 @@ public:
         return instance;
     }
 
+    void error(const types::Token& token, const std::string& msg);
     void error(unsigned int line, const std::string& msg);
+
     void debug_error(const std::string& msg);
 
     bool m_had_error = false;
@@ -27,6 +32,12 @@ private:
 
     void report(unsigned int line, const std::string& where, const std::string& msg);
 };
-}  // namespace garm
+
+class ParseError : public std::exception
+{
+public:
+    [[nodiscard]] const char* what() const noexcept override;
+};
+}
 
 #endif  // ERROR_HANDLER_H

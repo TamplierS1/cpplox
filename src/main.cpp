@@ -1,23 +1,14 @@
-#include "scanner.h"
 #include "ast_printer.h"
+#include "scanner.h"
+#include "parser.h"
 #include "token.h"
 
 int main(int argc, char** argv)
 {
     using namespace garm;
 
-    ast::Literal left{static_cast<Value>(123)};
-    auto* op = new Token(TokenType::MINUS, "-", std::nullopt, 1);
-    ast::Literal right{static_cast<Value>(123)};
-
-    ast::Expression* expr1 = new ast::Binary(&left, op, &right);
-
+    Scanner scanner;
     AstPrinter printer;
-
-    std::cout << printer.print(expr1);
-
-    /*
-    garm::Scanner scanner;
 
     if (argc > 2)
     {
@@ -26,12 +17,24 @@ int main(int argc, char** argv)
     }
     else if (argc == 2)
     {
-        scanner.run_file(argv[1]);
+        auto tokens = scanner.run_file(argv[1]);
+        if(!tokens.has_value())
+        {
+            std::exit(-1);
+        }
+
+        Parser parser{tokens.value()};
+        ExpressionPtr expr = parser.parse().value();
+
+        /*std::cout << dynamic_cast<ast::Binary*>(expr.get())->m_right << '\n';
+        std::cout << dynamic_cast<ast::Binary*>(expr.get())->m_op << '\n';
+        std::cout << dynamic_cast<ast::Binary*>(expr.get())->m_left << '\n';
+         */
+        if (ErrorHandler::get_instance().m_had_error)
+            std::exit(-1);
+
+        std::cout << printer.print(expr.get());
     }
-    else
-    {
-        scanner.run_prompt();
-    }
-*/
+
     return 0;
 }

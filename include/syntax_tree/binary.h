@@ -4,14 +4,16 @@
 #include "expression.h"
 #include "token.h"
 
+using ExpressionPtr = std::shared_ptr<garm::ast::Expression>;
+
 namespace garm::ast
 {
 class Binary : public Expression
 {
 public:
-    Binary(Expression* left, garm::types::Token* op, Expression* right)
+    Binary(const ExpressionPtr& left, const garm::types::Token& op, const ExpressionPtr& right)
         : m_left(left)
-        , m_op(op)
+        , m_op(std::make_shared<garm::types::Token>(op))
         , m_right(right)
     {
     }
@@ -21,9 +23,9 @@ public:
         return visitor->visit(this);
     }
 
-    std::shared_ptr<Expression> m_left;
+    ExpressionPtr m_left;
     std::shared_ptr<garm::types::Token> m_op;
-    std::shared_ptr<Expression> m_right;
+    ExpressionPtr m_right;
 };
 
 }

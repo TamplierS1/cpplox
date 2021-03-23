@@ -30,7 +30,7 @@ Value AstPrinter::visit(ast::Unary* expr)
     return static_cast<Value>(parenthesize(expr->m_op->get_lexeme(), {expr->m_right}));
 }
 
-std::string AstPrinter::parenthesize(const std::string& name, std::vector<std::shared_ptr<ast::Expression>>&& exprs)
+std::string AstPrinter::parenthesize(const std::string& name, std::vector<ExpressionPtr>&& exprs)
 {
     std::string out = "(" + name;
 
@@ -46,6 +46,9 @@ std::string AstPrinter::parenthesize(const std::string& name, std::vector<std::s
                 break;
             case 1: //double
                 out += std::to_string(std::get<double>(val.value()));
+                break;
+            case 2: //bool
+                out += std::to_string(std::get<bool>(val.value()));
                 break;
             default:
                 ErrorHandler::get_instance().debug_error("Not every type was handled");
