@@ -15,7 +15,7 @@ std::optional<std::string> literal_as_string(const Value& literal)
         case std::variant_npos:  // nothing
             return std::nullopt;
         default:
-            ErrorHandler::get_instance().debug_error("Not every type was handled");
+            std::cout << "Error: not every type was handled.";
             return std::nullopt;
     }
 }

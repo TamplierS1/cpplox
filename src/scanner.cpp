@@ -2,7 +2,7 @@
 
 namespace garm
 {
-void Scanner::run_file(const std::string& filename)
+std::optional<std::vector<Token>> Scanner::run_file(const std::string& filename)
 {
     try
     {
@@ -15,14 +15,14 @@ void Scanner::run_file(const std::string& filename)
         m_source = sstream.str();
 
         // scan the m_source that contains the script file contents
-        run();
+        return run();
 
-        if (ErrorHandler::get_instance().m_had_error) std::exit(65);
+        //if (ErrorHandler::get_instance().m_had_error) std::exit(65);
     }
     catch (std::ifstream::failure& e)
     {
         std::cout << "Error: failed to open script file - " << e.what() << '\n';
-        return;
+        return std::nullopt;
     }
 }
 
@@ -44,13 +44,9 @@ void Scanner::run_prompt()
     }
 }
 
-void Scanner::run()
+std::vector<Token> Scanner::run()
 {
-    std::vector<Token> tokens = scan_tokens();
-    for (const Token& token : tokens)
-    {
-        std::cout << token.get_lexeme();
-    }
+    return scan_tokens();
 }
 
 std::vector<Token> Scanner::scan_tokens()

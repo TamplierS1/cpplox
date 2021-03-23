@@ -64,11 +64,8 @@ std::optional<std::string> Token::token_to_string(TokenType token)
     {
         return token_lookup.find(token)->second;
     }
-    else
-    {
-        ErrorHandler::get_instance().debug_error("Invalid token.");
-        return std::nullopt;
-    }
+
+    return std::nullopt;
 }
 
 TokenType Token::get_token_type() const
@@ -91,4 +88,4 @@ unsigned int Token::get_line() const
     return m_line;
 }
 
-}  // namespace garm::types
+}

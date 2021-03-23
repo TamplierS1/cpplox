@@ -1,8 +1,8 @@
 #ifndef TOKEN_TYPE_H
 #define TOKEN_TYPE_H
 
-#include <utility>
 #include <map>
+#include <utility>
 
 #include "value.h"
 
@@ -70,6 +70,7 @@ public:
     [[nodiscard]] std::string get_lexeme() const;
     [[nodiscard]] Value get_literal() const;
     [[nodiscard]] unsigned int get_line() const;
+
 private:
     static std::optional<std::string> token_to_string(TokenType token);
 
@@ -77,8 +78,7 @@ private:
     std::string m_lexeme;
     Value m_literal;
     unsigned int m_line;
-
 };
-}  // namespace garm::types
+}
 
 #endif  // TOKEN_TYPE_H

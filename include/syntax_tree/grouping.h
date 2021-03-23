@@ -8,7 +8,7 @@ namespace garm::ast
 class Grouping : public Expression
 {
 public:
-    explicit Grouping(Expression* expression)
+    explicit Grouping(const ExpressionPtr& expression)
         : m_expression(expression)
     {
     }
@@ -18,7 +18,7 @@ public:
         return visitor->visit(this);
     }
 
-    std::shared_ptr<Expression> m_expression;
+    ExpressionPtr m_expression;
 };
 
 }

@@ -18,12 +18,13 @@ class Scanner
 {
 public:
     // scans file
-    void run_file(const std::string& filename);
+    std::optional<std::vector<Token>> run_file(const std::string& filename);
     // starts up an interactive prompt
     void run_prompt();
 
 private:
-    void run();
+    // scans the source string and returns a vector of tokens
+    std::vector<Token> run();
     // scan a string of characters and turn them into tokens
     std::vector<Token> scan_tokens();
     // scan an individual character and turn it into a token

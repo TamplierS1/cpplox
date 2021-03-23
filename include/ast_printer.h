@@ -10,6 +10,7 @@
 #include "syntax_tree/grouping.h"
 #include "syntax_tree/literal.h"
 #include "syntax_tree/unary.h"
+#include "error_handler.h"
 
 namespace garm
 {
@@ -25,7 +26,7 @@ public:
     Value visit(ast::Literal* expr) override;
     Value visit(ast::Unary* expr) override;
 private:
-    std::string parenthesize(const std::string& name, std::vector<std::shared_ptr<ast::Expression>>&& exprs);
+    std::string parenthesize(const std::string& name, std::vector<ExpressionPtr>&& exprs);
 };
 }
 
