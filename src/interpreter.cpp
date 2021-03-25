@@ -49,23 +49,15 @@ Value Interpreter::visit(ast::Binary *expr)
     Value left = evaluate(expr->m_left.get());
     Value right = evaluate(expr->m_right.get());
 
-    // extract the values beforehand so as not to repeat it
+    // extract the values beforehand to avoid repetition
     double dleft = 0, dright = 0;
-    std::string strleft, strright;
-    bool is_numbers = false, is_strings = false;
+    bool is_numbers = false;
     // numbers
     if (std::holds_alternative<double>(left.value()) && std::holds_alternative<double>(right.value()))
     {
         dleft = std::get<double>(left.value());
         dright = std::get<double>(right.value());
         is_numbers = true;
-    }
-    // strings
-    else if (std::holds_alternative<std::string>(left.value()) && std::holds_alternative<std::string>(right.value()))
-    {
-        strleft = std::get<std::string>(left.value());
-        strright = std::get<std::string>(right.value());
-        is_strings = true;
     }
 
     switch (expr->m_op->get_token_type())
@@ -76,11 +68,27 @@ Value Interpreter::visit(ast::Binary *expr)
             return dleft - dright;
         case types::TokenType::PLUS:
             if (is_numbers) return dleft + dright;
-            if (is_strings) return strleft + strright;
 
-            throw RuntimeError{*expr->m_op, "Operands must be two numbers or two strings."};
+            if (std::holds_alternative<std::string>(left.value())
+                && std::holds_alternative<std::string>(right.value()))
+            {
+                return std::get<std::string>(left.value()) + std::get<std::string>(right.value());
+            }
+
+            // if one of the values is a string,
+            // the other one is converted to a string and concatenated
+            if (std::holds_alternative<std::string>(left.value()))
+            {
+                return std::get<std::string>(left.value()) + trim_zeroes(std::to_string(std::get<double>(right.value())));
+            }
+            else if (std::holds_alternative<std::string>(right.value()))
+            {
+                return std::get<std::string>(right.value()) + trim_zeroes(std::to_string(std::get<double>(left.value())));
+            }
         case types::TokenType::SLASH:
             check_number_operands(*expr->m_op, left, right);
+            if (dright == 0)
+                throw RuntimeError{*expr->m_op, "Cannot divide by zero."};
             return dleft / dright;
         case types::TokenType::STAR:
             check_number_operands(*expr->m_op, left, right);

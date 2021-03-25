@@ -34,12 +34,7 @@ std::ostream& operator<<(std::ostream& stream, const Value& val)
         case 1:
         {
             std::string text = std::to_string(std::get<double>(val.value()));
-
-            // trim unnecessary zeroes
-            if (text.ends_with(".000000"))
-            {
-                text = text.substr(0, text.size() - 7);
-            }
+            text = trim_zeroes(text);
             return stream << text;
         }
         case 2:
@@ -54,6 +49,16 @@ std::ostream& operator<<(std::ostream& stream, const Value& val)
             std::cout << "Error: not every type was handled.";
             return stream;
     }
+}
+
+std::string trim_zeroes(const std::string& str)
+{
+    if (str.ends_with(".000000"))
+    {
+        return str.substr(0, str.size() - 7);
+    }
+
+    return str;
 }
 
 }
