@@ -98,11 +98,9 @@ Value Interpreter::visit(ast::Binary *expr)
         case types::TokenType::LESS_EQUAL:
             check_number_operands(*expr->m_op, left, right);
             return dleft <= dright;
-        case types::TokenType::BANG:
-            check_number_operands(*expr->m_op, left, right);
+        case types::TokenType::BANG_EQUAL:
             return !is_equal(left, right);
         case types::TokenType::EQUAL_EQUAL:
-            check_number_operands(*expr->m_op, left, right);
             return is_equal(left, right);
     }
 
