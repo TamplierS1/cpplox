@@ -20,11 +20,11 @@ public:
     // scans file
     std::optional<std::vector<Token>> run_file(const std::string& filename);
     // starts up an interactive prompt
-    void run_prompt();
+    std::vector<Token> run_line(const std::string& line);
 
 private:
     // scans the source string and returns a vector of tokens
-    std::vector<Token> run();
+    void run();
     // scan a string of characters and turn them into tokens
     std::vector<Token> scan_tokens();
     // scan an individual character and turn it into a token

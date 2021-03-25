@@ -1,10 +1,11 @@
 #ifndef BINARY_H
 #define BINARY_H
 
+#include <memory>
+
 #include "expression.h"
 #include "token.h"
 
-using ExpressionPtr = std::shared_ptr<garm::ast::Expression>;
 
 namespace garm::ast
 {

@@ -14,6 +14,7 @@ using Value = std::optional<std::variant<std::string, double, bool>>;
 // Converts Value to string (it's used when printing tokens)
 std::optional<std::string> literal_as_string(const Value& literal);
 
+std::ostream& operator<<(std::ostream& stream, const Value& val);
 }
 
 #endif  // VALUE_H

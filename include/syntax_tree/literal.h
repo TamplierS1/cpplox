@@ -1,6 +1,8 @@
 #ifndef LITERAL_H
 #define LITERAL_H
 
+#include <memory>
+
 #include "expression.h"
 
 namespace garm::ast

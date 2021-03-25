@@ -8,6 +8,28 @@
 
 namespace garm
 {
+
+class ParseError : public std::exception
+{
+public:
+    [[nodiscard]] const char* what() const noexcept override;
+};
+
+class RuntimeError : public std::exception
+{
+public:
+    explicit RuntimeError(types::Token op, std::string msg)
+        : m_op(std::move(op))
+        , m_msg(std::move(msg))
+    {
+    }
+
+    [[nodiscard]] const char* what() const noexcept override;
+
+    garm::types::Token m_op;
+    std::string m_msg;
+};
+
 class ErrorHandler
 {
 public:
@@ -22,10 +44,12 @@ public:
 
     void error(const types::Token& token, const std::string& msg);
     void error(unsigned int line, const std::string& msg);
+    void runtime_error(const RuntimeError& error);
 
     void debug_error(const std::string& msg);
 
     bool m_had_error = false;
+    bool m_had_runtime_error = false;
 
 private:
     ErrorHandler() = default;
@@ -33,11 +57,6 @@ private:
     void report(unsigned int line, const std::string& where, const std::string& msg);
 };
 
-class ParseError : public std::exception
-{
-public:
-    [[nodiscard]] const char* what() const noexcept override;
-};
 }
 
 #endif  // ERROR_HANDLER_H

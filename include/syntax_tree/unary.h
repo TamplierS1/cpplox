@@ -1,6 +1,8 @@
 #ifndef UNARY_H
 #define UNARY_H
 
+#include <memory>
+
 #include "expression.h"
 
 namespace garm::ast

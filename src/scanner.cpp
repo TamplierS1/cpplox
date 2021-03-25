@@ -15,9 +15,12 @@ std::optional<std::vector<Token>> Scanner::run_file(const std::string& filename)
         m_source = sstream.str();
 
         // scan the m_source that contains the script file contents
-        return run();
+        run();
 
-        //if (ErrorHandler::get_instance().m_had_error) std::exit(65);
+        if (ErrorHandler::get_instance().m_had_error) std::exit(65);
+        if (ErrorHandler::get_instance().m_had_runtime_error) std::exit(70);
+
+        return m_tokens;
     }
     catch (std::ifstream::failure& e)
     {
@@ -26,27 +29,24 @@ std::optional<std::vector<Token>> Scanner::run_file(const std::string& filename)
     }
 }
 
-void Scanner::run_prompt()
+std::vector<Token> Scanner::run_line(const std::string& line)
 {
-    std::string line;
-    while (std::cout << "> " && std::getline(std::cin, line))
-    {
-        m_start = 0;
-        m_current = 0;
-        m_source = line;
+    m_start = 0;
+    m_current = 0;
+    m_source = line;
+    m_tokens.clear();
 
-        // scan the line
-        run();
+    ErrorHandler::get_instance().m_had_error = false;
+    ErrorHandler::get_instance().m_had_runtime_error = false;
 
-        std::cout << '\n';
+    run();
 
-        ErrorHandler::get_instance().m_had_error = false;
-    }
+    return m_tokens;
 }
 
-std::vector<Token> Scanner::run()
+void Scanner::run()
 {
-    return scan_tokens();
+    scan_tokens();
 }
 
 std::vector<Token> Scanner::scan_tokens()
@@ -165,7 +165,7 @@ void Scanner::string()
     advance();
 
     // get the lexeme
-    std::string value = m_source.substr(m_start + 1, m_current - m_start - 1);
+    std::string value = m_source.substr(m_start + 1, m_current - m_start - 2);
     add_token(TokenType::STRING, value);
 }
 

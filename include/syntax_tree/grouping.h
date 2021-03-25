@@ -1,6 +1,8 @@
 #ifndef GROUPING_H
 #define GROUPING_H
 
+#include <memory>
+
 #include "expression.h"
 
 namespace garm::ast

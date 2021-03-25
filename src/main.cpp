@@ -2,13 +2,14 @@
 #include "scanner.h"
 #include "parser.h"
 #include "token.h"
+#include "interpreter.h"
 
 int main(int argc, char** argv)
 {
     using namespace garm;
 
     Scanner scanner;
-    AstPrinter printer;
+    Interpreter interpreter;
 
     if (argc > 2)
     {
@@ -18,22 +19,36 @@ int main(int argc, char** argv)
     else if (argc == 2)
     {
         auto tokens = scanner.run_file(argv[1]);
-        if(!tokens.has_value())
-        {
-            std::exit(-1);
-        }
 
         Parser parser{tokens.value()};
-        ExpressionPtr expr = parser.parse().value();
+        std::optional<ExpressionPtr> result = parser.parse();
+        if (!result.has_value())
+            std::exit(65);
 
-        /*std::cout << dynamic_cast<ast::Binary*>(expr.get())->m_right << '\n';
-        std::cout << dynamic_cast<ast::Binary*>(expr.get())->m_op << '\n';
-        std::cout << dynamic_cast<ast::Binary*>(expr.get())->m_left << '\n';
-         */
-        if (ErrorHandler::get_instance().m_had_error)
-            std::exit(-1);
+        ExpressionPtr expr = result.value();
 
-        std::cout << printer.print(expr.get());
+        interpreter.interpret(expr.get());
+    }
+    else
+    {
+        std::string line;
+        while (std::cout << "> " && std::getline(std::cin, line))
+        {
+            auto tokens = scanner.run_line(line);
+
+            Parser parser{tokens};
+            std::optional<ExpressionPtr> result = parser.parse();
+            if (!result.has_value())
+                continue;
+
+            // TODO: catch exceptions to prevent terminating the REPL
+            ExpressionPtr expr = result.value();
+
+            interpreter.interpret(expr.get());
+
+            std::cout << '\n';
+        }
+
     }
 
     return 0;

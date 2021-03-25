@@ -118,6 +118,9 @@ ExpressionPtr Parser::primary()
         return std::make_shared<ast::Grouping>(mid_expr);
     }
 
+    /* TODO: I think throwing an exception to unwind wasn't the best idea.
+     *  Come up with something else
+     */
     // Failed to find any rule to parse the token
     throw error(peek(), "Expect expression.");
 }

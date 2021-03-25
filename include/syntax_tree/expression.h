@@ -18,4 +18,6 @@ public:
 
 }
 
+using ExpressionPtr = std::shared_ptr<garm::ast::Expression>;
+
 #endif  // EXPRESSION_H
