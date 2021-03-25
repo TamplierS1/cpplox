@@ -28,7 +28,7 @@ void ErrorHandler::error(unsigned int line, const std::string& msg)
 
 void ErrorHandler::runtime_error(const RuntimeError& error)
 {
-    std::cout << error.m_msg << "\n[line " + std::to_string(error.m_op.get_line()) << "]";
+    std::cout << error.m_msg << " [line " + std::to_string(error.m_op.get_line()) << "]";
     m_had_runtime_error = true;
 }
 
