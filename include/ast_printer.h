@@ -1,30 +1,30 @@
 #ifndef AST_PRINTER_H
 #define AST_PRINTER_H
 
+#include <memory>
 #include <string>
 #include <variant>
 #include <vector>
-#include <memory>
 
-#include "syntax_tree/binary.h"
-#include "syntax_tree/grouping.h"
-#include "syntax_tree/literal.h"
-#include "syntax_tree/unary.h"
 #include "error_handler.h"
+#include "syntax_tree/expression.h"
 
-namespace garm
+namespace cpplox
 {
+using namespace ast;
 
 // Prints a syntax tree for a given expression
-class AstPrinter : public ast::Visitor
+class AstPrinter : public expr::Visitor
 {
 public:
-    std::string print(ast::Expression* expr);
+    std::string print(expr::Expression* expr);
 
-    Value visit(ast::Binary* expr) override;
-    Value visit(ast::Grouping* expr) override;
-    Value visit(ast::Literal* expr) override;
-    Value visit(ast::Unary* expr) override;
+    Value visit(expr::Binary* expr) override;
+    Value visit(expr::Grouping* expr) override;
+    Value visit(expr::Literal* expr) override;
+    Value visit(expr::Unary* expr) override;
+    Value visit(expr::Variable* expr) override;
+
 private:
     std::string parenthesize(const std::string& name, std::vector<ExpressionPtr>&& exprs);
 };

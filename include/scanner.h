@@ -10,9 +10,8 @@
 #include "token.h"
 #include "value.h"
 
-namespace garm
+namespace cpplox
 {
-using namespace garm::types;
 
 class Scanner
 {
@@ -61,6 +60,6 @@ private:
 
     std::string m_source;
 };
-}  // namespace garm
+}  // namespace cpplox
 
 #endif  // SCANNER_H

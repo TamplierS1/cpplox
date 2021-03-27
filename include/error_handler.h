@@ -6,7 +6,7 @@
 
 #include "token.h"
 
-namespace garm
+namespace cpplox
 {
 
 class ParseError : public std::exception
@@ -18,7 +18,7 @@ public:
 class RuntimeError : public std::exception
 {
 public:
-    explicit RuntimeError(types::Token op, std::string msg)
+    explicit RuntimeError(Token op, std::string msg)
         : m_op(std::move(op))
         , m_msg(std::move(msg))
     {
@@ -26,7 +26,7 @@ public:
 
     [[nodiscard]] const char* what() const noexcept override;
 
-    garm::types::Token m_op;
+    cpplox::Token m_op;
     std::string m_msg;
 };
 
@@ -42,7 +42,7 @@ public:
         return instance;
     }
 
-    void error(const types::Token& token, const std::string& msg);
+    void error(const Token& token, const std::string& msg);
     void error(unsigned int line, const std::string& msg);
     void runtime_error(const RuntimeError& error);
 
