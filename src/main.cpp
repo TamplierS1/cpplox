@@ -1,4 +1,3 @@
-#include "ast_printer.h"
 #include "scanner.h"
 #include "parser.h"
 #include "token.h"
@@ -6,14 +5,14 @@
 
 int main(int argc, char** argv)
 {
-    using namespace garm;
+    using namespace cpplox;
 
     Scanner scanner;
     Interpreter interpreter;
 
     if (argc > 2)
     {
-        std::cout << "Usage: garm [script]" << '\n';
+        std::cout << "Usage: cpplox [script]" << '\n';
         std::exit(64);
     }
     else if (argc == 2)
@@ -21,13 +20,11 @@ int main(int argc, char** argv)
         auto tokens = scanner.run_file(argv[1]);
 
         Parser parser{tokens.value()};
-        std::optional<ExpressionPtr> result = parser.parse();
-        if (!result.has_value())
+        std::optional<std::vector<StatementPtr>> statements = parser.parse();
+        if (!statements.has_value())
             std::exit(65);
 
-        ExpressionPtr expr = result.value();
-
-        interpreter.interpret(expr.get());
+        interpreter.interpret(statements.value());
     }
     else
     {
@@ -37,14 +34,11 @@ int main(int argc, char** argv)
             auto tokens = scanner.run_line(line);
 
             Parser parser{tokens};
-            std::optional<ExpressionPtr> result = parser.parse();
-            if (!result.has_value())
+            std::optional<std::vector<StatementPtr>> statements = parser.parse();
+            if (!statements.has_value())
                 continue;
 
-            // TODO: catch exceptions to prevent terminating the REPL
-            ExpressionPtr expr = result.value();
-
-            interpreter.interpret(expr.get());
+            interpreter.interpret(statements.value());
 
             std::cout << '\n';
         }

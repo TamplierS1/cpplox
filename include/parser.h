@@ -3,28 +3,29 @@
 
 #include <memory>
 #include <vector>
+#include <typeinfo>
 
 #include "error_handler.h"
-#include "syntax_tree/binary.h"
 #include "syntax_tree/expression.h"
-#include "syntax_tree/grouping.h"
-#include "syntax_tree/literal.h"
-#include "syntax_tree/unary.h"
+#include "syntax_tree/statement.h"
 #include "token.h"
 
-namespace garm
+namespace cpplox
 {
+
+using namespace ast;
+
 // Parser that uses recursive decent parsing method
 class Parser
 {
 public:
-    explicit Parser(std::vector<types::Token> tokens)
+    explicit Parser(std::vector<Token> tokens)
         : m_tokens(std::move(tokens))
     {
     }
 
     // Begins parsing
-    std::optional<ExpressionPtr> parse();
+    std::optional<std::vector<StatementPtr>> parse();
 
 private:
     /*
@@ -32,6 +33,7 @@ private:
      */
 
     ExpressionPtr expression();
+    ExpressionPtr assignment();
     ExpressionPtr equality();
     ExpressionPtr comparison();
     ExpressionPtr term();
@@ -39,31 +41,38 @@ private:
     ExpressionPtr unary();
     ExpressionPtr primary();
 
+    StatementPtr declaration();
+    StatementPtr var_declaration();
+    StatementPtr statement();
+    StatementPtr print_statement();
+    StatementPtr expression_statement();
+    std::vector<StatementPtr> block();
+
     /*
      * Utility functions
      */
 
     // Checks if the current token is of any of the given types. Consumes the token if the type matches
-    bool match(const std::vector<types::TokenType>&& types);
+    bool match(const std::vector<TokenType>&& types);
     // Returns the current token and consumes it.
-    types::Token advance();
+    Token advance();
     // Checks if the current token is of the given type, consumes it and returns it.
     // If the types don't match an error is reported
-    types::Token consume(types::TokenType type, const std::string& msg);
+    Token consume(TokenType type, const std::string& msg);
     // Checks if current token is of the given type.
-    [[nodiscard]] bool check(types::TokenType type) const;
+    [[nodiscard]] bool check(TokenType type) const;
     // Returns the current token
-    [[nodiscard]] types::Token peek() const;
+    [[nodiscard]] Token peek() const;
     // Checks if the input has exhausted
     [[nodiscard]] bool is_end() const;
     // Returns the most recently consumed token
-    [[nodiscard]] types::Token previous() const;
+    [[nodiscard]] Token previous() const;
     // Reports an error and returns an exception
-    [[nodiscard]] ParseError error(const types::Token& token, const std::string& msg);
+    [[nodiscard]] ParseError error(const Token& token, const std::string& msg);
     // Advances the input to the statement boundary in the process of error recovery
     void synchronize();
 
-    const std::vector<types::Token> m_tokens;
+    const std::vector<Token> m_tokens;
     unsigned int m_current = 0;
 };
 }

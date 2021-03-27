@@ -6,7 +6,7 @@
 
 #include "value.h"
 
-namespace garm::types
+namespace cpplox
 {
 enum class TokenType
 {
@@ -56,7 +56,7 @@ enum class TokenType
     VAR,
     WHILE,
 
-    GARM_EOF
+    cpplox_EOF
 };
 
 class Token

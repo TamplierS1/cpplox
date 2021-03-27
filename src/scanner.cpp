@@ -1,6 +1,6 @@
 #include "scanner.h"
 
-namespace garm
+namespace cpplox
 {
 std::optional<std::vector<Token>> Scanner::run_file(const std::string& filename)
 {
@@ -57,7 +57,7 @@ std::vector<Token> Scanner::scan_tokens()
         scan_token();
     }
 
-    m_tokens.emplace_back(TokenType::GARM_EOF, "", std::nullopt, m_line);
+    m_tokens.emplace_back(TokenType::cpplox_EOF, "", std::nullopt, m_line);
     return m_tokens;
 }
 
@@ -293,4 +293,4 @@ std::optional<TokenType> Scanner::str_to_keyword(const std::string& str)
     }
 }
 
-}  // namespace garm
+}  // namespace cpplox

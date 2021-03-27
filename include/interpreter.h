@@ -1,35 +1,54 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "syntax_tree/visitor.h"
-#include "syntax_tree/literal.h"
-#include "syntax_tree/grouping.h"
-#include "syntax_tree/binary.h"
-#include "syntax_tree/unary.h"
-#include "error_handler.h"
+#include <vector>
 
-namespace garm
+#include "environment.h"
+#include "error_handler.h"
+#include "syntax_tree/expression.h"
+#include "syntax_tree/statement.h"
+
+namespace cpplox
 {
+using namespace ast;
 
 // Interprets a syntax tree and executes it
-class Interpreter : public ast::Visitor
+class Interpreter : public expr::Visitor, stmt::Visitor
 {
 public:
-    void interpret(ast::Expression* expr);
+    Interpreter()
+    {
+        m_env = std::make_shared<Environment>();
+    }
 
-    Value visit(ast::Literal* expr) override;
-    Value visit(ast::Grouping* expr) override;
-    Value visit(ast::Unary* expr) override;
-    Value visit(ast::Binary* expr) override;
+    void interpret(std::vector<StatementPtr>& stmts);
+
+    // expressions
+    Value visit(expr::Literal* expr) override;
+    Value visit(expr::Grouping* expr) override;
+    Value visit(expr::Unary* expr) override;
+    Value visit(expr::Binary* expr) override;
+    Value visit(expr::Variable* expr) override;
+    Value visit(expr::Assign* expr) override;
+
+    // statements
+    void visit(stmt::Expression* stmt) override;
+    void visit(stmt::Print* stmt) override;
+    void visit(stmt::Var* stmt) override;
+    void visit(stmt::Block* stmt) override;
 
 private:
-    Value evaluate(ast::Expression* expr);
+    Value evaluate(expr::Expression* expr);
+    void execute(stmt::Statement* stmt);
+    void execute_block(const std::vector<StatementPtr>& statements, const std::shared_ptr<Environment>& env);
 
     bool is_true(const Value& val);
     bool is_equal(const Value& val1, const Value& val2);
 
-    void check_number_operands(const types::Token& op, const Value& operand);
-    void check_number_operands(const types::Token& op, const Value& left, const Value& right);
+    void check_number_operands(const Token& op, const Value& operand);
+    void check_number_operands(const Token& op, const Value& left, const Value& right);
+
+    std::shared_ptr<Environment> m_env;
 };
 
 }

@@ -5,7 +5,7 @@
 #include <variant>
 #include <iostream>
 
-namespace garm
+namespace cpplox
 {
 
 // Value represents a literal value that some expressions can have - currently either a string or a double

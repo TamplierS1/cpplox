@@ -1,6 +1,6 @@
 #include "value.h"
 
-namespace garm
+namespace cpplox
 {
 std::optional<std::string> literal_as_string(const Value& literal)
 {
@@ -27,6 +27,9 @@ std::optional<std::string> literal_as_string(const Value& literal)
 
 std::ostream& operator<<(std::ostream& stream, const Value& val)
 {
+    if (!val.has_value())
+        return stream << "nil";
+
     switch (val->index())
     {
         case 0:

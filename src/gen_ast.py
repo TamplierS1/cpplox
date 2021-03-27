@@ -12,14 +12,14 @@ def find_whitespace(string):
 
 
 def generate_visitor(types):
-    with open("../include/syntax_tree/visitor.h", 'w') as file:
+    with open("../include/syntax_tree/visitor_expr.h", 'w') as file:
         header_guard = "#ifndef VISITOR_H\n#define VISITOR_H\n\n"
         file.write(header_guard)
 
         file.write("#include \"value.h\"\n")
 
         file.write('\n')
-        file.write("namespace garm::ast\n")
+        file.write("namespace cpplox::ast\n")
         file.write("{\n\n")
 
         # forward declarations
@@ -50,7 +50,7 @@ def generate_ast(class_name, base_class, includes, fields):
             file.write("#include \"" + inc + ".h\"\n")
 
         file.write('\n')
-        file.write("namespace garm::ast\n")
+        file.write("namespace cpplox::ast\n")
         file.write("{\n")
         file.write("class " + class_name + " : public " + base_class + '\n')
         file.write("{\n")
@@ -112,15 +112,15 @@ def generate_ast(class_name, base_class, includes, fields):
 if __name__ == "__main__":
     # binary.h
     generate_ast("Binary", "Expression",
-                 ["expression", "token"], ["Expression left", "garm::types::Token op", "Expression right"])
+                 ["expression", "token"], ["Expression left", "cpplox::Token op", "Expression right"])
     # grouping.h
     generate_ast("Grouping", "Expression",
                  ["expression"], ["Expression expression"])
     # unary.h
     generate_ast("Unary", "Expression",
-                 ["expression"], ["garm::types::Token op", "Expression right"])
+                 ["expression"], ["cpplox::Token op", "Expression right"])
     # literal.h
     generate_ast("Literal", "Expression",
-                 ["expression", "../literal"], ["garm::types::Literal value"])
+                 ["expression", "../literal"], ["cpplox::Literal value"])
     # visitor.h
     generate_visitor(["Binary", "Grouping", "Literal", "Unary"])

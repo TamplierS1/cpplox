@@ -1,6 +1,6 @@
 #include "token.h"
 
-namespace garm::types
+namespace cpplox
 {
 
 Token::Token(TokenType type, std::string lexeme, Value literal, unsigned int line)
@@ -57,7 +57,7 @@ std::optional<std::string> Token::token_to_string(TokenType token)
         {TokenType::TRUE, "TRUE"},
         {TokenType::VAR, "VAR"},
         {TokenType::WHILE, "WHILE"},
-        {TokenType::GARM_EOF, "EOF"}
+        {TokenType::cpplox_EOF, "EOF"}
     };
 
     if (token_lookup.contains(token))
