@@ -34,7 +34,10 @@ void Environment::assign(const Token &name, const Value &val)
 
     // try outer scope
     if (!m_enclosing.expired())
+    {
         m_enclosing.lock()->assign(name, val);
+        return;
+    }
 
     throw RuntimeError{name, "Undefined variable '" + name.get_lexeme() + "'."};
 }

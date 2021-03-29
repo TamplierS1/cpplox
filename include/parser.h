@@ -34,6 +34,8 @@ private:
 
     ExpressionPtr expression();
     ExpressionPtr assignment();
+    ExpressionPtr logic_or();
+    ExpressionPtr logic_and();
     ExpressionPtr equality();
     ExpressionPtr comparison();
     ExpressionPtr term();
@@ -47,6 +49,10 @@ private:
     StatementPtr print_statement();
     StatementPtr expression_statement();
     std::vector<StatementPtr> block();
+    StatementPtr if_statement();
+    StatementPtr while_statement();
+    StatementPtr for_statement();
+    StatementPtr break_statement();
 
     /*
      * Utility functions

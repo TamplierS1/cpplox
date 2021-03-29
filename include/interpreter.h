@@ -30,12 +30,15 @@ public:
     Value visit(expr::Binary* expr) override;
     Value visit(expr::Variable* expr) override;
     Value visit(expr::Assign* expr) override;
+    Value visit(expr::Logical* expr) override;
 
     // statements
     void visit(stmt::Expression* stmt) override;
     void visit(stmt::Print* stmt) override;
     void visit(stmt::Var* stmt) override;
     void visit(stmt::Block* stmt) override;
+    void visit(stmt::If* stmt) override;
+    void visit(stmt::While* stmt) override;
 
 private:
     Value evaluate(expr::Expression* expr);

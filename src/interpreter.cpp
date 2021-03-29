@@ -121,7 +121,7 @@ Value Interpreter::visit(expr::Variable *expr)
 {
     Value var = m_env->get(*expr->m_name);
     // report a runtime error if the variable is uninitialized
-    if(!var.has_value())
+    if (!var.has_value())
         throw RuntimeError{*expr->m_name, "Variable '" + expr->m_name->get_lexeme() + "' is uninitialized."};
 
     return var;
@@ -132,6 +132,22 @@ Value Interpreter::visit(expr::Assign *expr)
     Value val = evaluate(expr->m_value.get());
     m_env->assign(*expr->m_name, val);
     return val;
+}
+
+Value Interpreter::visit(expr::Logical *expr)
+{
+    Value left = evaluate(expr->m_left.get());
+
+    if (expr->m_op->get_token_type() == TokenType::OR)
+    {
+        if (is_true(left)) return left;
+    }
+    else
+    {
+        if (!is_true(left)) return left;
+    }
+
+    return evaluate(expr->m_right.get());
 }
 
 void Interpreter::visit(stmt::Expression *stmt)
@@ -159,6 +175,26 @@ void Interpreter::visit(stmt::Var *stmt)
 void Interpreter::visit(stmt::Block *stmt)
 {
     execute_block(stmt->m_statements, std::make_shared<Environment>(m_env));
+}
+
+void Interpreter::visit(stmt::If *stmt)
+{
+    if (is_true(evaluate(stmt->m_condition.get())))
+    {
+        execute(stmt->m_then.get());
+    }
+    else if (stmt->m_else.has_value())
+    {
+        execute(stmt->m_else->get());
+    }
+}
+
+void Interpreter::visit(stmt::While *stmt)
+{
+    while (is_true(evaluate(stmt->m_condition.get())))
+    {
+        execute(stmt->m_stmt.get());
+    }
 }
 
 Value Interpreter::evaluate(expr::Expression *expr)

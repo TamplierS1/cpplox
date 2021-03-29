@@ -22,7 +22,7 @@ ExpressionPtr Parser::expression()
 
 ExpressionPtr Parser::assignment()
 {
-    ExpressionPtr expr = equality();
+    ExpressionPtr expr = logic_or();
 
     if (match({TokenType::EQUAL}))
     {
@@ -38,6 +38,34 @@ ExpressionPtr Parser::assignment()
         // no need to throw an exception here,
         // because the parser is not in a confused state
         error(equals, "Invalid argument target.");
+    }
+
+    return expr;
+}
+
+ExpressionPtr Parser::logic_or()
+{
+    ExpressionPtr expr = logic_and();
+
+    while (match({TokenType::OR}))
+    {
+        Token op = previous();
+        ExpressionPtr right = logic_and();
+        expr = std::make_shared<expr::Logical>(expr, op, right);
+    }
+
+    return expr;
+}
+
+ExpressionPtr Parser::logic_and()
+{
+    ExpressionPtr expr = equality();
+
+    while (match({TokenType::AND}))
+    {
+        Token op = previous();
+        ExpressionPtr right = equality();
+        expr = std::make_shared<expr::Logical>(expr, op, right);
     }
 
     return expr;
@@ -61,8 +89,7 @@ ExpressionPtr Parser::comparison()
 {
     ExpressionPtr expr = term();
 
-    while (match({TokenType::LESS, TokenType::LESS_EQUAL, TokenType::GREATER,
-                  TokenType::GREATER_EQUAL}))
+    while (match({TokenType::LESS, TokenType::LESS_EQUAL, TokenType::GREATER, TokenType::GREATER_EQUAL}))
     {
         Token op = previous();
         ExpressionPtr right = term();
@@ -158,12 +185,11 @@ StatementPtr Parser::declaration()
 {
     try
     {
-        if (match({TokenType::VAR}))
-            return var_declaration();
+        if (match({TokenType::VAR})) return var_declaration();
 
         return statement();
     }
-    catch(ParseError& e)
+    catch (ParseError& e)
     {
         synchronize();
         return nullptr;
@@ -186,7 +212,10 @@ StatementPtr Parser::var_declaration()
 
 StatementPtr Parser::statement()
 {
+    if (match({TokenType::FOR})) return for_statement();
+    if (match({TokenType::IF})) return if_statement();
     if (match({TokenType::PRINT})) return print_statement();
+    if (match({TokenType::WHILE})) return while_statement();
     if (match({TokenType::LEFT_BRACE})) return std::make_shared<stmt::Block>(block());
 
     return expression_statement();
@@ -210,13 +239,83 @@ std::vector<StatementPtr> Parser::block()
 {
     std::vector<StatementPtr> statements;
 
-    while(!check(TokenType::RIGHT_BRACE) && !is_end())
+    while (!check(TokenType::RIGHT_BRACE) && !is_end())
     {
         statements.emplace_back(declaration());
     }
 
     consume(TokenType::RIGHT_BRACE, "Expect '}' after block.");
     return statements;
+}
+
+StatementPtr Parser::if_statement()
+{
+    consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+    ExpressionPtr condition = expression();
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
+
+    StatementPtr then = statement();
+    std::optional<StatementPtr> else_br = std::nullopt;
+    if (match({TokenType::ELSE}))
+    {
+        else_br = statement();
+    }
+
+    return std::make_shared<stmt::If>(condition, then, else_br);
+}
+
+StatementPtr Parser::while_statement()
+{
+    consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
+    ExpressionPtr condition = expression();
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after while condition.");
+    StatementPtr body = statement();
+
+    return std::make_shared<stmt::While>(condition, body);
+}
+
+StatementPtr Parser::for_statement()
+{
+    consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
+
+    std::optional<StatementPtr> initializer;
+    if (match({TokenType::SEMICOLON}))
+        initializer = std::nullopt;
+    else if (match({TokenType::VAR}))
+        initializer = var_declaration();
+    else
+        initializer = expression_statement();
+
+    std::optional<ExpressionPtr> condition = std::nullopt;
+    if (!check(TokenType::SEMICOLON)) condition = expression();
+    consume(TokenType::SEMICOLON, "Expect ';' after for-loop condition.");
+
+    std::optional<ExpressionPtr> increment = std::nullopt;
+    if (!check(TokenType::SEMICOLON)) increment = expression();
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    StatementPtr body = statement();
+
+    // convert for loop to a while loop
+    // by manually constructing the syntax tree
+    if (increment.has_value())
+    {
+        // we just add the increment expression to the end of the for loop body
+        std::vector<StatementPtr> stmts{body, std::make_shared<stmt::Expression>(*increment)};
+        body = std::make_shared<stmt::Block>(stmts);
+    }
+
+    // if the condition wasn't provided, it is always true
+    if (!condition.has_value()) condition = std::make_shared<expr::Literal>(true);
+    body = std::make_shared<stmt::While>(*condition, body);
+
+    if (initializer.has_value())
+    {
+        std::vector<StatementPtr> stmts{*initializer, body};
+        body = std::make_shared<stmt::Block>(stmts);
+    }
+
+    return body;
 }
 
 bool Parser::match(const std::vector<TokenType>&& types)
