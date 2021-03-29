@@ -60,6 +60,6 @@ private:
 
     std::string m_source;
 };
-}  // namespace cpplox
+}
 
 #endif  // SCANNER_H

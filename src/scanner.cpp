@@ -293,4 +293,4 @@ std::optional<TokenType> Scanner::str_to_keyword(const std::string& str)
     }
 }
 
-}  // namespace cpplox
+}

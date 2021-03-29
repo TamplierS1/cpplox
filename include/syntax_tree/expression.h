@@ -13,6 +13,7 @@ class Literal;
 class Unary;
 class Variable;
 class Assign;
+class Logical;
 
 // Interface that represents an operation executed on the given expressions
 class Visitor
@@ -24,6 +25,7 @@ public:
     virtual Value visit(Unary* expr) = 0;
     virtual Value visit(Variable* expr) = 0;
     virtual Value visit(Assign* expr) = 0;
+    virtual Value visit(Logical* expr) = 0;
 
 protected:
     virtual ~Visitor() = default;
@@ -143,6 +145,25 @@ public:
     std::shared_ptr<Expression> m_value;
 };
 
+class Logical : public Expression
+{
+public:
+    Logical(const std::shared_ptr<Expression>& left, const Token& op, const std::shared_ptr<Expression>& right)
+        : m_left(left)
+        , m_op(std::make_shared<Token>(op))
+        , m_right(right)
+    {
+    }
+
+    Value accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    std::shared_ptr<Expression> m_left;
+    std::shared_ptr<Token> m_op;
+    std::shared_ptr<Expression> m_right;
+};
 }
 
 using ExpressionPtr = std::shared_ptr<cpplox::ast::expr::Expression>;
