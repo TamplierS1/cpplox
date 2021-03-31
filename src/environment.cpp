@@ -17,8 +17,8 @@ Value Environment::get(const Token &name)
         return element->second;
 
     // try outer scope
-    if (!m_enclosing.expired())
-        return m_enclosing.lock()->get(name);
+    if (m_enclosing != nullptr)
+        return m_enclosing->get(name);
 
     throw RuntimeError{name, "Undefined variable '" + name.get_lexeme() + "'."};
 }
@@ -33,9 +33,9 @@ void Environment::assign(const Token &name, const Value &val)
     }
 
     // try outer scope
-    if (!m_enclosing.expired())
+    if (m_enclosing != nullptr)
     {
-        m_enclosing.lock()->assign(name, val);
+        m_enclosing->assign(name, val);
         return;
     }
 
