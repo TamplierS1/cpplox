@@ -27,7 +27,7 @@ public:
     void assign(const Token& name, const Value& val);
 
     // outer scope
-    std::weak_ptr<Environment> m_enclosing;
+    std::shared_ptr<Environment> m_enclosing;
 
 private:
     std::unordered_map<std::string, Value> m_values;

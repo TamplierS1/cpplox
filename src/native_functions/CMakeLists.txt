@@ -1,0 +1,1 @@
+target_sources(cpplox PRIVATE clock_fn.cpp)

@@ -137,7 +137,24 @@ ExpressionPtr Parser::unary()
         return std::make_shared<expr::Unary>(op, right);
     }
 
-    return primary();
+    return call();
+}
+
+ExpressionPtr Parser::call()
+{
+    ExpressionPtr expr = primary();
+
+    while (true)
+    {
+        if (match({TokenType::LEFT_PAREN}))
+        {
+            expr = finish_call(expr);
+        }
+        else
+            break;
+    }
+
+    return expr;
 }
 
 ExpressionPtr Parser::primary()
@@ -160,16 +177,14 @@ ExpressionPtr Parser::primary()
     {
         ExpressionPtr mid_expr = expression();
 
-        consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
-
-        // TODO: uncomment when you implement statements
-        /*try {
+        try
+        {
             consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
         }
         catch (ParseError&)
         {
             synchronize();
-        }*/
+        }
 
         return std::make_shared<expr::Grouping>(mid_expr);
     }
@@ -185,6 +200,7 @@ StatementPtr Parser::declaration()
 {
     try
     {
+        if (match({TokenType::FUN})) return function("function");
         if (match({TokenType::VAR})) return var_declaration();
 
         return statement();
@@ -194,6 +210,33 @@ StatementPtr Parser::declaration()
         synchronize();
         return nullptr;
     }
+}
+
+StatementPtr Parser::function(const std::string& kind)
+{
+    Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + "name.");
+
+    consume(TokenType::LEFT_PAREN, "Expect '(' after " + kind + " name.");
+    std::vector<std::shared_ptr<Token>> params;
+    if (!check(TokenType::RIGHT_PAREN))
+    {
+        do
+        {
+            if (params.size() >= 255)
+                error(peek(), "Can't have more than 255 parameters.");
+
+            auto token = std::make_shared<Token>(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+            params.emplace_back(token);
+        }
+        while(match({TokenType::COMMA}));
+    }
+
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after " + kind + " parameters.");
+
+    consume(TokenType::LEFT_BRACE, "Expect '{' before " + kind + " body.");
+    std::vector<StatementPtr> body = block();
+
+    return std::make_shared<stmt::Function>(name, params, body);
 }
 
 StatementPtr Parser::var_declaration()
@@ -215,6 +258,7 @@ StatementPtr Parser::statement()
     if (match({TokenType::FOR})) return for_statement();
     if (match({TokenType::IF})) return if_statement();
     if (match({TokenType::PRINT})) return print_statement();
+    if (match({TokenType::RETURN})) return return_statement();
     if (match({TokenType::WHILE})) return while_statement();
     if (match({TokenType::LEFT_BRACE})) return std::make_shared<stmt::Block>(block());
 
@@ -316,6 +360,35 @@ StatementPtr Parser::for_statement()
     }
 
     return body;
+}
+
+StatementPtr Parser::return_statement()
+{
+    Token keyword = previous();
+    std::optional<ExpressionPtr> value = std::nullopt;
+    if (!check(TokenType::SEMICOLON))
+        value = expression();
+
+    consume(TokenType::SEMICOLON, "Expect ';' after return values.");
+    return std::make_shared<stmt::Return>(keyword, value);
+}
+
+ExpressionPtr Parser::finish_call(const ExpressionPtr& callee)
+{
+    std::vector<ExpressionPtr> args;
+    if (!check(TokenType::RIGHT_PAREN))
+    {
+        do
+        {
+            if (args.size() >= 255) error(peek(), "Can't have more than 255 arguments.");
+
+            args.emplace_back(expression());
+        } while (match({TokenType::COMMA}));
+    }
+
+    Token paren = consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.");
+
+    return std::make_shared<expr::Call>(callee, paren, args);
 }
 
 bool Parser::match(const std::vector<TokenType>&& types)

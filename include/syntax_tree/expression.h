@@ -14,6 +14,7 @@ class Unary;
 class Variable;
 class Assign;
 class Logical;
+class Call;
 
 // Interface that represents an operation executed on the given expressions
 class Visitor
@@ -26,6 +27,7 @@ public:
     virtual Value visit(Variable* expr) = 0;
     virtual Value visit(Assign* expr) = 0;
     virtual Value visit(Logical* expr) = 0;
+    virtual Value visit(Call* expr) = 0;
 
 protected:
     virtual ~Visitor() = default;
@@ -163,6 +165,28 @@ public:
     std::shared_ptr<Expression> m_left;
     std::shared_ptr<Token> m_op;
     std::shared_ptr<Expression> m_right;
+};
+
+class Call : public Expression
+{
+public:
+    Call(const std::shared_ptr<Expression>& callee, const Token& paren,
+         const std::vector<std::shared_ptr<Expression>>& args)
+        : m_callee(callee)
+        , m_paren(std::make_shared<Token>(paren))
+        , m_args(args)
+    {
+    }
+
+    Value accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    // callee is the thing being called
+    std::shared_ptr<Expression> m_callee;
+    std::shared_ptr<Token> m_paren;
+    std::vector<std::shared_ptr<Expression>> m_args;
 };
 }
 

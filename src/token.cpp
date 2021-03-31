@@ -2,18 +2,12 @@
 
 namespace cpplox
 {
-
 Token::Token(TokenType type, std::string lexeme, Value literal, unsigned int line)
     : m_token_type(type)
     , m_lexeme(std::move(lexeme))
     , m_literal(std::move(literal))
     , m_line(line)
 {
-}
-
-std::string Token::to_string()
-{
-    return token_to_string(m_token_type).value_or("ERROR") + " " + m_lexeme + " " + literal_as_string(m_literal.value()).value();
 }
 
 std::optional<std::string> Token::token_to_string(TokenType token)

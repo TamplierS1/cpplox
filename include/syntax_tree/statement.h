@@ -11,6 +11,8 @@ class Var;
 class Block;
 class If;
 class While;
+class Function;
+class Return;
 
 // Interface that represents an operation executed on the given statements
 class Visitor
@@ -23,6 +25,8 @@ public:
     virtual void visit(Block* stmt) = 0;
     virtual void visit(If* stmt) = 0;
     virtual void visit(While* stmt) = 0;
+    virtual void visit(Function* stmt) = 0;
+    virtual void visit(Return* stmt) = 0;
 
 protected:
     virtual ~Visitor() = default;
@@ -146,6 +150,44 @@ public:
     std::shared_ptr<Statement> m_stmt;
 };
 
+class Function : public Statement
+{
+public:
+    Function(const Token& name, const std::vector<std::shared_ptr<Token>>& params,
+             const std::vector<std::shared_ptr<Statement>>& body)
+        : m_name(std::make_shared<Token>(name))
+        , m_params(params)
+        , m_body(body)
+    {
+    }
+
+    void accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    std::shared_ptr<Token> m_name;
+    std::vector<std::shared_ptr<Token>> m_params;
+    std::vector<std::shared_ptr<Statement>> m_body;
+};
+
+class Return : public Statement
+{
+public:
+    Return(const Token& keyword, const std::optional<ExpressionPtr>& value)
+        : m_keyword(std::make_shared<Token>(keyword))
+        , m_value(value)
+    {
+    }
+
+    void accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    std::shared_ptr<Token> m_keyword;
+    std::optional<ExpressionPtr> m_value;
+};
 }
 
 using StatementPtr = std::shared_ptr<cpplox::ast::stmt::Statement>;

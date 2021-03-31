@@ -2,6 +2,17 @@
 
 namespace cpplox
 {
+
+Interpreter::Interpreter()
+{
+    m_globals = std::make_shared<Environment>();
+    m_env = m_globals;
+
+    auto clock = std::make_shared<ClockFunction>();
+    // define native `clock()` function that measures time
+    m_globals->define("clock", std::dynamic_pointer_cast<Callable>(clock));
+}
+
 void Interpreter::interpret(std::vector<StatementPtr> &stmts)
 {
     try
@@ -38,7 +49,7 @@ Value Interpreter::visit(expr::Unary *expr)
         case TokenType::MINUS:
             check_number_operands(*expr->m_op, right);
             // a unary minus can only be applied to numbers and that's why we convert the expression to double
-            return -std::get<double>(right.value());
+            return -std::get<double>(right.m_value.value());
         case TokenType::BANG:
             return !is_true(right);
     }
@@ -55,10 +66,10 @@ Value Interpreter::visit(expr::Binary *expr)
     double dleft = 0, dright = 0;
     bool is_numbers = false;
     // numbers
-    if (std::holds_alternative<double>(left.value()) && std::holds_alternative<double>(right.value()))
+    if (std::holds_alternative<double>(left.m_value.value()) && std::holds_alternative<double>(right.m_value.value()))
     {
-        dleft = std::get<double>(left.value());
-        dright = std::get<double>(right.value());
+        dleft = std::get<double>(left.m_value.value());
+        dright = std::get<double>(right.m_value.value());
         is_numbers = true;
     }
 
@@ -71,22 +82,23 @@ Value Interpreter::visit(expr::Binary *expr)
         case TokenType::PLUS:
             if (is_numbers) return dleft + dright;
 
-            if (std::holds_alternative<std::string>(left.value()) && std::holds_alternative<std::string>(right.value()))
+            if (std::holds_alternative<std::string>(left.m_value.value()) &&
+                std::holds_alternative<std::string>(right.m_value.value()))
             {
-                return std::get<std::string>(left.value()) + std::get<std::string>(right.value());
+                return std::get<std::string>(left.m_value.value()) + std::get<std::string>(right.m_value.value());
             }
 
             // if one of the values is a string,
             // the other one is converted to a string and concatenated
-            if (std::holds_alternative<std::string>(left.value()))
+            if (std::holds_alternative<std::string>(left.m_value.value()))
             {
-                return std::get<std::string>(left.value()) +
-                       trim_zeroes(std::to_string(std::get<double>(right.value())));
+                return std::get<std::string>(left.m_value.value()) +
+                       trim_zeroes(std::to_string(std::get<double>(right.m_value.value())));
             }
-            else if (std::holds_alternative<std::string>(right.value()))
+            else if (std::holds_alternative<std::string>(right.m_value.value()))
             {
-                return std::get<std::string>(right.value()) +
-                       trim_zeroes(std::to_string(std::get<double>(left.value())));
+                return trim_zeroes(std::to_string(std::get<double>(left.m_value.value()))) +
+                       std::get<std::string>(right.m_value.value());
             }
         case TokenType::SLASH:
             check_number_operands(*expr->m_op, left, right);
@@ -121,7 +133,7 @@ Value Interpreter::visit(expr::Variable *expr)
 {
     Value var = m_env->get(*expr->m_name);
     // report a runtime error if the variable is uninitialized
-    if (!var.has_value())
+    if (!var.m_value.has_value())
         throw RuntimeError{*expr->m_name, "Variable '" + expr->m_name->get_lexeme() + "' is uninitialized."};
 
     return var;
@@ -148,6 +160,34 @@ Value Interpreter::visit(expr::Logical *expr)
     }
 
     return evaluate(expr->m_right.get());
+}
+
+Value Interpreter::visit(expr::Call *expr)
+{
+    Value callee = evaluate(expr->m_callee.get());
+
+    std::vector<Value> args;
+    for (const auto &arg : expr->m_args)
+    {
+        args.emplace_back(evaluate(arg.get()));
+    }
+
+    // check if the `callee` is actually something we can call
+    if (dynamic_cast<Callable *>(std::get<std::shared_ptr<Callable>>(callee.m_value.value()).get()) == nullptr)
+    {
+        throw RuntimeError{*expr->m_paren, "Can only call functions and classes."};
+    }
+
+    auto function = std::get<std::shared_ptr<Callable>>(callee.m_value.value());
+
+    // check for right number of arguments
+    if (args.size() != function->arity())
+    {
+        throw RuntimeError{*expr->m_paren, "Expected " + std::to_string(function->arity()) + " arguments, but got " +
+                                               std::to_string(args.size()) + "."};
+    }
+
+    return function->call(this, args);
 }
 
 void Interpreter::visit(stmt::Expression *stmt)
@@ -197,6 +237,23 @@ void Interpreter::visit(stmt::While *stmt)
     }
 }
 
+void Interpreter::visit(stmt::Function *stmt)
+{
+    auto statement = std::make_shared<stmt::Function>(*stmt);
+    auto function = std::make_shared<Function>(statement, m_env);
+    m_env->define(stmt->m_name->get_lexeme(), std::dynamic_pointer_cast<Callable>(function));
+}
+
+void Interpreter::visit(stmt::Return *stmt)
+{
+    Value value = std::nullopt;
+    if (stmt->m_value.has_value()) value = evaluate(stmt->m_value->get());
+
+    // using exceptions for returning from functions is fucking horrible,
+    // but I couldn't come up with anything else
+    throw Return{value};
+}
+
 Value Interpreter::evaluate(expr::Expression *expr)
 {
     return expr->accept(this);
@@ -214,11 +271,21 @@ void Interpreter::execute_block(const std::vector<StatementPtr> &statements, con
 {
     std::shared_ptr<Environment> previous = m_env;
 
-    m_env = env;
-
-    for (auto &statement : statements)
+    // I have no idea why, but without
+    // the try - catch block it just does not work
+    try
     {
-        execute(statement.get());
+        m_env = env;
+
+        for (auto &statement : statements)
+        {
+            execute(statement.get());
+        }
+    }
+    catch(...)
+    {
+        m_env = previous;
+        throw;
     }
 
     m_env = previous;
@@ -227,8 +294,8 @@ void Interpreter::execute_block(const std::vector<StatementPtr> &statements, con
 bool Interpreter::is_true(const Value &val)
 {
     // only `nil` and `false` are false in cpplox
-    if (val == std::nullopt) return false;
-    if (std::holds_alternative<bool>(val.value())) return std::get<bool>(val.value());
+    if (val.m_value == std::nullopt) return false;
+    if (std::holds_alternative<bool>(val.m_value.value())) return std::get<bool>(val.m_value.value());
 
     return true;
 }
@@ -237,22 +304,23 @@ bool Interpreter::is_equal(const Value &val1, const Value &val2)
 {
     // if both values are `nil` they are equal
     // useful when checking if the value is null
-    if (val1 == std::nullopt && val2 == std::nullopt) return true;
-    if (val1 == std::nullopt) return false;
+    if (val1.m_value == std::nullopt && val2.m_value == std::nullopt) return true;
+    if (val1.m_value == std::nullopt) return false;
 
-    return val1.value() == val2.value();
+    return val1.m_value.value() == val2.m_value.value();
 }
 
 void Interpreter::check_number_operands(const Token &op, const Value &operand)
 {
-    if (std::holds_alternative<double>(operand.value())) return;
+    if (std::holds_alternative<double>(operand.m_value.value())) return;
 
     throw RuntimeError{op, "Operand must be a number."};
 }
 
 void Interpreter::check_number_operands(const Token &op, const Value &left, const Value &right)
 {
-    if (std::holds_alternative<double>(left.value()) && std::holds_alternative<double>(right.value())) return;
+    if (std::holds_alternative<double>(left.m_value.value()) && std::holds_alternative<double>(right.m_value.value()))
+        return;
 
     throw RuntimeError{op, "Operands must be numbers."};
 }

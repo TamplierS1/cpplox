@@ -2,8 +2,8 @@
 #define PARSER_H
 
 #include <memory>
-#include <vector>
 #include <typeinfo>
+#include <vector>
 
 #include "error_handler.h"
 #include "syntax_tree/expression.h"
@@ -12,7 +12,6 @@
 
 namespace cpplox
 {
-
 using namespace ast;
 
 // Parser that uses recursive decent parsing method
@@ -41,9 +40,13 @@ private:
     ExpressionPtr term();
     ExpressionPtr factor();
     ExpressionPtr unary();
+    ExpressionPtr call();
     ExpressionPtr primary();
 
     StatementPtr declaration();
+    // `kind` represents the kind of declaration parsed -
+    // a function or a method
+    StatementPtr function(const std::string& kind);
     StatementPtr var_declaration();
     StatementPtr statement();
     StatementPtr print_statement();
@@ -52,12 +55,13 @@ private:
     StatementPtr if_statement();
     StatementPtr while_statement();
     StatementPtr for_statement();
-    StatementPtr break_statement();
+    StatementPtr return_statement();
 
     /*
      * Utility functions
      */
 
+    ExpressionPtr finish_call(const ExpressionPtr& callee);
     // Checks if the current token is of any of the given types. Consumes the token if the type matches
     bool match(const std::vector<TokenType>&& types);
     // Returns the current token and consumes it.
@@ -74,7 +78,7 @@ private:
     // Returns the most recently consumed token
     [[nodiscard]] Token previous() const;
     // Reports an error and returns an exception
-    [[nodiscard]] ParseError error(const Token& token, const std::string& msg);
+    ParseError error(const Token& token, const std::string& msg);
     // Advances the input to the statement boundary in the process of error recovery
     void synchronize();
 
