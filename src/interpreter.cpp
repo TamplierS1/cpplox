@@ -190,6 +190,13 @@ Value Interpreter::visit(expr::Call *expr)
     return function->call(this, args);
 }
 
+Value Interpreter::visit(expr::Lambda *expr)
+{
+    auto lambda_expr = std::make_shared<expr::Lambda>(*expr);
+    auto lambda = std::make_shared<Lambda>(lambda_expr);
+    return std::dynamic_pointer_cast<Callable>(lambda);
+}
+
 void Interpreter::visit(stmt::Expression *stmt)
 {
     evaluate(stmt->m_expr.get());

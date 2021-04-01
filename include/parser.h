@@ -32,6 +32,7 @@ private:
      */
 
     ExpressionPtr expression();
+    ExpressionPtr lambda();
     ExpressionPtr assignment();
     ExpressionPtr logic_or();
     ExpressionPtr logic_and();

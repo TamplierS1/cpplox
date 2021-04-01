@@ -4,11 +4,12 @@
 #include <exception>
 #include <iostream>
 
+#include "fmt/color.h"
+#include "fmt/core.h"
 #include "token.h"
 
 namespace cpplox
 {
-
 class ParseError : public std::exception
 {
 public:
@@ -43,7 +44,8 @@ public:
     }
 
     void error(const Token& token, const std::string& msg);
-    void error(unsigned int line, const std::string& msg);
+    void error(unsigned int line, unsigned int column, char character, const std::string& src_str,
+               const std::string& msg);
     void runtime_error(const RuntimeError& error);
 
     void debug_error(const std::string& msg);
@@ -54,7 +56,10 @@ public:
 private:
     ErrorHandler() = default;
 
-    void report(unsigned int line, const std::string& where, const std::string& msg);
+    std::string format_error(const Token& token);
+
+    void report(unsigned int line, unsigned int column, const std::string& where, const std::string& src_str,
+                const std::string& msg);
 };
 
 }
