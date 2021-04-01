@@ -9,8 +9,12 @@ set(CMAKE_BUILD_TYPE Debug)
 add_executable(cpplox "")
 add_subdirectory(src)
 
+find_package(fmt)
+
 target_compile_options(cpplox PRIVATE -Wall -Wextra -pedantic -Wno-narrowing -Wno-sign-compare
         -fno-omit-frame-pointer -ggdb)
 
 target_include_directories(cpplox PRIVATE SYSTEM
         "include")
+
+target_link_libraries(cpplox fmt::fmt)

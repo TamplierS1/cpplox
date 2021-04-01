@@ -62,22 +62,50 @@ enum class TokenType
 class Token
 {
 public:
-    Token(TokenType type, std::string lexeme, Value literal, unsigned int line);
+    Token(TokenType type, std::string lexeme, Value literal, unsigned int line, const std::string& str_line,
+          unsigned int column)
+        : m_token_type(type)
+        , m_lexeme(std::move(lexeme))
+        , m_literal(std::move(literal))
+        , m_line(line)
+        , m_str_line(str_line)
+        , m_column(column)
+    {
+    }
 
-    std::string to_string();
-
-    [[nodiscard]] TokenType get_token_type() const;
-    [[nodiscard]] std::string get_lexeme() const;
-    [[nodiscard]] Value get_literal() const;
-    [[nodiscard]] unsigned int get_line() const;
+    [[nodiscard]] inline TokenType get_token_type() const
+    {
+        return m_token_type;
+    }
+    [[nodiscard]] inline std::string get_lexeme() const
+    {
+        return m_lexeme;
+    }
+    [[nodiscard]] inline Value get_literal() const
+    {
+        return m_literal;
+    }
+    [[nodiscard]] inline unsigned int get_line() const
+    {
+        return m_line;
+    }
+    [[nodiscard]] inline std::string get_str_line() const
+    {
+        return m_str_line;
+    }
+    [[nodiscard]] inline unsigned int get_column() const
+    {
+        return m_column;
+    }
 
 private:
-    static std::optional<std::string> token_to_string(TokenType token);
-
     TokenType m_token_type;
     std::string m_lexeme;
     Value m_literal;
     unsigned int m_line;
+    // used to print a line that had an error
+    std::string m_str_line;
+    unsigned int m_column;
 };
 }
 

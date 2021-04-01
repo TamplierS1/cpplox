@@ -6,9 +6,10 @@
 #include "environment.h"
 #include "error_handler.h"
 #include "function.h"
+#include "lambda.h"
 #include "native_functions/clock_fn.h"
-#include "syntax_tree/expression.h"
 #include "return.h"
+#include "syntax_tree/expression.h"
 
 namespace cpplox
 {
@@ -31,6 +32,7 @@ public:
     Value visit(expr::Assign* expr) override;
     Value visit(expr::Logical* expr) override;
     Value visit(expr::Call* expr) override;
+    Value visit(expr::Lambda* expr) override;
 
     // statements
     void visit(stmt::Expression* stmt) override;

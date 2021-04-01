@@ -51,13 +51,14 @@ void Scanner::run()
 
 std::vector<Token> Scanner::scan_tokens()
 {
+    update_source_line();
     while (!is_end())
     {
         m_start = m_current;
         scan_token();
     }
 
-    m_tokens.emplace_back(TokenType::cpplox_EOF, "", std::nullopt, m_line);
+    m_tokens.emplace_back(TokenType::cpplox_EOF, "", std::nullopt, m_line, "", m_column);
     return m_tokens;
 }
 
@@ -129,6 +130,7 @@ void Scanner::scan_token()
         case '\t':
             break;
         case '\n':
+            update_source_line();
             m_line++;
             break;
         case '"':
@@ -142,9 +144,10 @@ void Scanner::scan_token()
             else if (std::isalpha(c))
                 identifier();
             else
-                ErrorHandler::get_instance().error(m_line, "Unexpected character.");
+                ErrorHandler::get_instance().error(m_line, m_column, c, m_str_line, "Unexpected character.");
             break;
     }
+
 }
 
 void Scanner::string()
@@ -158,7 +161,7 @@ void Scanner::string()
 
     if (is_end())
     {
-        ErrorHandler::get_instance().error(m_line, "Unterminated string.");
+        ErrorHandler::get_instance().error(m_line, m_column, m_source[m_current], m_str_line, "Unterminated string.");
     }
 
     // eat the closing quote
@@ -213,7 +216,7 @@ void Scanner::block_comment()
         // if we run out of characters
         if (is_end())
         {
-            ErrorHandler::get_instance().error(m_line, "Unclosed block comment.");
+            ErrorHandler::get_instance().error(m_line, m_column, m_source[m_current], m_str_line, "Unclosed block comment.");
             return;
         }
         if (peek() == '\n') m_line++;
@@ -239,7 +242,7 @@ void Scanner::block_comment()
 void Scanner::add_token(TokenType type, const Value& literal)
 {
     std::string lexeme = m_source.substr(m_start, m_current - m_start);
-    m_tokens.emplace_back(type, lexeme, literal, m_line);
+    m_tokens.emplace_back(type, lexeme, literal, m_line, m_str_line, m_column);
 }
 
 bool Scanner::is_end() const
@@ -258,6 +261,11 @@ bool Scanner::match(char expected)
 
 char Scanner::advance()
 {
+    if (m_source[m_current] == '\n')
+        m_column = 0;
+    else
+        m_column++;
+
     return m_source.at(m_current++);
 }
 
@@ -271,6 +279,21 @@ char Scanner::peek_next()
 {
     if (m_current + 1 >= m_source.size()) return '\0';
     return m_source.at(m_current + 1);
+}
+
+void Scanner::update_source_line()
+{
+    // the character that starts new line
+    unsigned int new_line = m_current;
+    for (char c : m_source.substr(m_current, m_source.size() - m_current))
+    {
+        if (c == '\n')
+            break;
+        new_line++;
+    }
+
+    m_str_line = m_source.substr(m_current, new_line - m_current);
+    m_new_line = new_line;
 }
 
 std::optional<TokenType> Scanner::str_to_keyword(const std::string& str)

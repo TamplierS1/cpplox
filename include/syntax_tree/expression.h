@@ -5,6 +5,12 @@
 
 #include "token.h"
 
+namespace cpplox::ast::stmt
+{
+// this is used in `Lambda`
+class Statement;
+}
+
 namespace cpplox::ast::expr
 {
 class Binary;
@@ -15,6 +21,7 @@ class Variable;
 class Assign;
 class Logical;
 class Call;
+class Lambda;
 
 // Interface that represents an operation executed on the given expressions
 class Visitor
@@ -28,6 +35,7 @@ public:
     virtual Value visit(Assign* expr) = 0;
     virtual Value visit(Logical* expr) = 0;
     virtual Value visit(Call* expr) = 0;
+    virtual Value visit(Lambda* expr) = 0;
 
 protected:
     virtual ~Visitor() = default;
@@ -188,6 +196,25 @@ public:
     std::shared_ptr<Token> m_paren;
     std::vector<std::shared_ptr<Expression>> m_args;
 };
+
+class Lambda : public Expression
+{
+public:
+    Lambda(const std::vector<std::shared_ptr<Token>>& params, const std::vector<std::shared_ptr<cpplox::ast::stmt::Statement>>& body)
+        : m_params(params)
+        , m_body(body)
+    {
+    }
+
+    Value accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    std::vector<std::shared_ptr<Token>> m_params;
+    std::vector<std::shared_ptr<cpplox::ast::stmt::Statement>> m_body;
+};
+
 }
 
 using ExpressionPtr = std::shared_ptr<cpplox::ast::expr::Expression>;

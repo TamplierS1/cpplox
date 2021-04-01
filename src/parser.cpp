@@ -17,7 +17,35 @@ std::optional<std::vector<StatementPtr>> Parser::parse()
 
 ExpressionPtr Parser::expression()
 {
+    // even though I already matched `FUN` token
+    // the current token isn't `FUN`
+    // not sure why it happens
+    if (match({TokenType::FUN})) return lambda();
+
     return assignment();
+}
+
+ExpressionPtr Parser::lambda()
+{
+    consume(TokenType::LEFT_PAREN, "Expect '(' after 'fun' in lambda.");
+    std::vector<std::shared_ptr<Token>> params;
+    if (!check(TokenType::RIGHT_PAREN))
+    {
+        do
+        {
+            if (params.size() >= 255) error(peek(), "Can't have more than 255 parameters.");
+
+            auto token = std::make_shared<Token>(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+            params.emplace_back(token);
+        } while (match({TokenType::COMMA}));
+    }
+
+    consume(TokenType::RIGHT_PAREN, "Expect ')' after lambda parameters.");
+
+    consume(TokenType::LEFT_BRACE, "Expect '{' before lambda body.");
+    std::vector<StatementPtr> body = block();
+
+    return std::make_shared<expr::Lambda>(params, body);
 }
 
 ExpressionPtr Parser::assignment()
@@ -214,7 +242,10 @@ StatementPtr Parser::declaration()
 
 StatementPtr Parser::function(const std::string& kind)
 {
-    Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + "name.");
+    // check for lambda function
+    if (!check(TokenType::IDENTIFIER)) return statement();
+
+    Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
 
     consume(TokenType::LEFT_PAREN, "Expect '(' after " + kind + " name.");
     std::vector<std::shared_ptr<Token>> params;
@@ -222,13 +253,11 @@ StatementPtr Parser::function(const std::string& kind)
     {
         do
         {
-            if (params.size() >= 255)
-                error(peek(), "Can't have more than 255 parameters.");
+            if (params.size() >= 255) error(peek(), "Can't have more than 255 parameters.");
 
             auto token = std::make_shared<Token>(consume(TokenType::IDENTIFIER, "Expect parameter name."));
             params.emplace_back(token);
-        }
-        while(match({TokenType::COMMA}));
+        } while (match({TokenType::COMMA}));
     }
 
     consume(TokenType::RIGHT_PAREN, "Expect ')' after " + kind + " parameters.");
@@ -366,8 +395,7 @@ StatementPtr Parser::return_statement()
 {
     Token keyword = previous();
     std::optional<ExpressionPtr> value = std::nullopt;
-    if (!check(TokenType::SEMICOLON))
-        value = expression();
+    if (!check(TokenType::SEMICOLON)) value = expression();
 
     consume(TokenType::SEMICOLON, "Expect ';' after return values.");
     return std::make_shared<stmt::Return>(keyword, value);

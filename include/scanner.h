@@ -46,6 +46,8 @@ private:
     char peek();
     // returns the char after the next char (2-char lookahead)
     char peek_next();
+    // updates `m_str_line`
+    void update_source_line();
 
     static std::optional<TokenType> str_to_keyword(const std::string& str);
 
@@ -57,6 +59,11 @@ private:
     unsigned int m_current = 0;
     // current line
     unsigned int m_line = 1;
+    // current line as a string
+    std::string m_str_line;
+    // the character at which a new line starts
+    unsigned int m_new_line = 0;
+    unsigned int m_column = 0;
 
     std::string m_source;
 };
