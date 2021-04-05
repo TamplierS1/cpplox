@@ -1,17 +1,19 @@
-#ifndef CLOCK_FN_H
-#define CLOCK_FN_H
+#ifndef PRINTLN_FN_H
+#define PRINTLN_FN_H
 
-#include <chrono>
-
+#include "fmt/core.h"
 #include "callable.h"
 #include "value.h"
 
 namespace cpplox
 {
 /*
- * Returns time passed since epoch.
+ * Prints 'str' with a newline character after it
+ *
+ * 'str': a string to print
+ *
  */
-class ClockFunction : public Callable
+class PrintlnFunction : public Callable
 {
 public:
     Value call(Interpreter* interpreter, const std::vector<Value>& args) override;
@@ -20,4 +22,4 @@ public:
 };
 }
 
-#endif  // CLOCK_FN_H
+#endif  // PRINTLN_FN_H

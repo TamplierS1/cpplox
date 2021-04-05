@@ -69,47 +69,47 @@ void Scanner::scan_token()
     switch (c)
     {
         case '(':
-            add_token(TokenType::LEFT_PAREN, std::nullopt);
+            add_token(TokenType::LEFT_PAREN);
             break;
         case ')':
-            add_token(TokenType::RIGHT_PAREN, std::nullopt);
+            add_token(TokenType::RIGHT_PAREN);
             break;
         case '{':
-            add_token(TokenType::LEFT_BRACE, std::nullopt);
+            add_token(TokenType::LEFT_BRACE);
             break;
         case '}':
-            add_token(TokenType::RIGHT_BRACE, std::nullopt);
+            add_token(TokenType::RIGHT_BRACE);
             break;
         case ',':
-            add_token(TokenType::COMMA, std::nullopt);
+            add_token(TokenType::COMMA);
             break;
         case '.':
-            add_token(TokenType::DOT, std::nullopt);
+            add_token(TokenType::DOT);
             break;
         case '-':
-            add_token(TokenType::MINUS, std::nullopt);
+            add_token(TokenType::MINUS);
             break;
         case '+':
-            add_token(TokenType::PLUS, std::nullopt);
+            add_token(TokenType::PLUS);
             break;
         case ';':
-            add_token(TokenType::SEMICOLON, std::nullopt);
+            add_token(TokenType::SEMICOLON);
             break;
         case '*':
-            add_token(TokenType::STAR, std::nullopt);
+            add_token(TokenType::STAR);
             break;
         case '!':
             // handle operators like !=, ==
-            add_token(match('=') ? TokenType::BANG_EQUAL : TokenType::BANG, std::nullopt);
+            add_token(match('=') ? TokenType::BANG_EQUAL : TokenType::BANG);
             break;
         case '=':
-            add_token(match('=') ? TokenType::EQUAL_EQUAL : TokenType::EQUAL, std::nullopt);
+            add_token(match('=') ? TokenType::EQUAL_EQUAL : TokenType::EQUAL);
             break;
         case '<':
-            add_token(match('=') ? TokenType::LESS_EQUAL : TokenType::LESS, std::nullopt);
+            add_token(match('=') ? TokenType::LESS_EQUAL : TokenType::LESS);
             break;
         case '>':
-            add_token(match('=') ? TokenType::GREATER_EQUAL : TokenType::GREATER, std::nullopt);
+            add_token(match('=') ? TokenType::GREATER_EQUAL : TokenType::GREATER);
             break;
         case '/':
             // if it's a comment - skip
@@ -123,7 +123,7 @@ void Scanner::scan_token()
                 block_comment();
             }
             else
-                add_token(TokenType::SLASH, std::nullopt);
+                add_token(TokenType::SLASH);
             break;
         case ' ':
         case '\r':
@@ -147,7 +147,6 @@ void Scanner::scan_token()
                 ErrorHandler::get_instance().error(m_line, m_column, c, m_str_line, "Unexpected character.");
             break;
     }
-
 }
 
 void Scanner::string()
@@ -216,7 +215,8 @@ void Scanner::block_comment()
         // if we run out of characters
         if (is_end())
         {
-            ErrorHandler::get_instance().error(m_line, m_column, m_source[m_current], m_str_line, "Unclosed block comment.");
+            ErrorHandler::get_instance().error(m_line, m_column, m_source[m_current], m_str_line,
+                                               "Unclosed block comment.");
             return;
         }
         if (peek() == '\n') m_line++;
@@ -261,11 +261,7 @@ bool Scanner::match(char expected)
 
 char Scanner::advance()
 {
-    if (m_source[m_current] == '\n')
-        m_column = 0;
-    else
-        m_column++;
-
+    update_column();
     return m_source.at(m_current++);
 }
 
@@ -284,16 +280,23 @@ char Scanner::peek_next()
 void Scanner::update_source_line()
 {
     // the character that starts new line
-    unsigned int new_line = m_current;
+    int new_line = m_current;
     for (char c : m_source.substr(m_current, m_source.size() - m_current))
     {
-        if (c == '\n')
-            break;
+        if (c == '\n') break;
         new_line++;
     }
 
     m_str_line = m_source.substr(m_current, new_line - m_current);
     m_new_line = new_line;
+}
+
+void Scanner::update_column()
+{
+    if (m_source[m_current] == '\n')
+        m_column = 0;
+    else
+        m_column++;
 }
 
 std::optional<TokenType> Scanner::str_to_keyword(const std::string& str)

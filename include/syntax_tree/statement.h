@@ -81,7 +81,7 @@ public:
     // so it takes std::optional to indicate that.
     // If a variable is not initialized just pass std::nullopt
     Var(const Token& name, const std::optional<std::shared_ptr<expr::Expression>>& initializer)
-        : m_name(std::make_shared<Token>(name))
+        : m_name(name)
         , m_initializer(initializer)
     {
     }
@@ -91,7 +91,7 @@ public:
         return visitor->visit(this);
     }
 
-    std::shared_ptr<Token> m_name;
+    Token m_name;
     std::optional<std::shared_ptr<expr::Expression>> m_initializer;
 };
 
@@ -153,9 +153,9 @@ public:
 class Function : public Statement
 {
 public:
-    Function(const Token& name, const std::vector<std::shared_ptr<Token>>& params,
+    Function(const Token& name, const std::vector<Token>& params,
              const std::vector<std::shared_ptr<Statement>>& body)
-        : m_name(std::make_shared<Token>(name))
+        : m_name(name)
         , m_params(params)
         , m_body(body)
     {
@@ -166,8 +166,8 @@ public:
         return visitor->visit(this);
     }
 
-    std::shared_ptr<Token> m_name;
-    std::vector<std::shared_ptr<Token>> m_params;
+    Token m_name;
+    std::vector<Token> m_params;
     std::vector<std::shared_ptr<Statement>> m_body;
 };
 
@@ -175,7 +175,7 @@ class Return : public Statement
 {
 public:
     Return(const Token& keyword, const std::optional<ExpressionPtr>& value)
-        : m_keyword(std::make_shared<Token>(keyword))
+        : m_keyword(keyword)
         , m_value(value)
     {
     }
@@ -185,7 +185,7 @@ public:
         return visitor->visit(this);
     }
 
-    std::shared_ptr<Token> m_keyword;
+    Token m_keyword;
     std::optional<ExpressionPtr> m_value;
 };
 }

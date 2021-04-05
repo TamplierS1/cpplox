@@ -35,7 +35,7 @@ private:
     void identifier();
     void block_comment();
 
-    void add_token(TokenType type, const Value& literal);
+    void add_token(TokenType type, const Value& literal = std::nullopt);
     // returns true if scanner is at the end of file
     [[nodiscard]] bool is_end() const;
     // returns true if the next char in the input equals *expected*
@@ -48,22 +48,24 @@ private:
     char peek_next();
     // updates `m_str_line`
     void update_source_line();
+    // updates `m_column`
+    void update_column();
 
     static std::optional<TokenType> str_to_keyword(const std::string& str);
 
     std::vector<Token> m_tokens;
 
     // start of the current token
-    unsigned int m_start = 0;
+    int m_start = 0;
     // current index into the source string
-    unsigned int m_current = 0;
+    int m_current = 0;
     // current line
-    unsigned int m_line = 1;
+    int m_line = 1;
     // current line as a string
     std::string m_str_line;
     // the character at which a new line starts
-    unsigned int m_new_line = 0;
-    unsigned int m_column = 0;
+    int m_new_line = 0;
+    int m_column = 0;
 
     std::string m_source;
 };

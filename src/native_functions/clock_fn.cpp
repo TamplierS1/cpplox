@@ -10,7 +10,7 @@ Value ClockFunction::call(Interpreter *interpreter, const std::vector<Value>& ar
     return static_cast<double>(value.count());
 }
 
-unsigned int ClockFunction::arity() const
+int ClockFunction::arity() const
 {
     // `clock()` receives 0 arguments, thus we return 0
     return 0;

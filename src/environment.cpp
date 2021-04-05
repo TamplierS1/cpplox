@@ -10,7 +10,7 @@ void Environment::define(const std::string &name, const Value &val)
     m_values.insert({name, val});
 }
 
-Value Environment::get(const Token &name)
+Value Environment::get(const Token &name) const
 {
     auto element = m_values.find(name.get_lexeme());
     if (element != m_values.end())
@@ -23,10 +23,15 @@ Value Environment::get(const Token &name)
     throw RuntimeError{name, "Undefined variable '" + name.get_lexeme() + "'."};
 }
 
+Value Environment::get_at(int distance, const std::string &name)
+{
+    return ancestor(distance)->m_values.at(name);
+}
+
 void Environment::assign(const Token &name, const Value &val)
 {
     auto variable = m_values.find(name.get_lexeme());
-    if(variable != m_values.end())
+    if (variable != m_values.end())
     {
         variable->second = val;
         return;
@@ -40,6 +45,22 @@ void Environment::assign(const Token &name, const Value &val)
     }
 
     throw RuntimeError{name, "Undefined variable '" + name.get_lexeme() + "'."};
+}
+
+void Environment::assign_at(int distance, const Token &name, const Value &val)
+{
+    ancestor(distance)->m_values.emplace(name.get_lexeme(), val);
+}
+
+std::shared_ptr<Environment> Environment::ancestor(int distance) const
+{
+    auto env = std::make_shared<Environment>(*this);
+    for (int i = 0; i < distance; i++)
+    {
+        env = env->m_enclosing;
+    }
+
+    return env;
 }
 
 }
