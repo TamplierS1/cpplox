@@ -10,7 +10,7 @@ Value Lambda::call(Interpreter *interpreter, const std::vector<Value> &args)
 
     for (int i = 0; i < m_declaration->m_params.size(); i++)
     {
-        env->define(m_declaration->m_params.at(i)->get_lexeme(), args.at(i));
+        env->define(m_declaration->m_params.at(i).get_lexeme(), args.at(i));
     }
 
     // bad. bad. bad
@@ -25,7 +25,7 @@ Value Lambda::call(Interpreter *interpreter, const std::vector<Value> &args)
     return std::nullopt;
 }
 
-unsigned int Lambda::arity() const
+int Lambda::arity() const
 {
     return m_declaration->m_params.size();
 }

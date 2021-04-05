@@ -15,7 +15,7 @@ using Val = std::optional<std::variant<std::string, double, bool, std::shared_pt
 class Value
 {
 public:
-    // don't make constructors explicit - we need implicit conversion
+    // don't make constructors explicit - we need implicit conversion (except for bools)
     Value(std::nullopt_t)
         : m_value(std::nullopt)
     {
@@ -28,7 +28,7 @@ public:
         : m_value(value)
     {
     }
-    Value(const bool& value)
+    explicit Value(const bool& value)
         : m_value(value)
     {
     }
@@ -39,6 +39,7 @@ public:
 
     // Prints the value
     friend std::ostream& operator<<(std::ostream& stream, const Value& val);
+    [[nodiscard]] std::string to_string() const;
 
     Val m_value;
 };

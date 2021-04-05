@@ -28,14 +28,14 @@ ExpressionPtr Parser::expression()
 ExpressionPtr Parser::lambda()
 {
     consume(TokenType::LEFT_PAREN, "Expect '(' after 'fun' in lambda.");
-    std::vector<std::shared_ptr<Token>> params;
+    std::vector<Token> params;
     if (!check(TokenType::RIGHT_PAREN))
     {
         do
         {
             if (params.size() >= 255) error(peek(), "Can't have more than 255 parameters.");
 
-            auto token = std::make_shared<Token>(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+            auto token = consume(TokenType::IDENTIFIER, "Expect parameter name.");
             params.emplace_back(token);
         } while (match({TokenType::COMMA}));
     }
@@ -59,7 +59,7 @@ ExpressionPtr Parser::assignment()
 
         if (typeid(*expr) == typeid(expr::Variable))
         {
-            Token name = *std::dynamic_pointer_cast<expr::Variable>(expr)->m_name;
+            Token name = std::dynamic_pointer_cast<expr::Variable>(expr)->m_name;
             return std::make_shared<expr::Assign>(name, value);
         }
 
@@ -248,14 +248,14 @@ StatementPtr Parser::function(const std::string& kind)
     Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
 
     consume(TokenType::LEFT_PAREN, "Expect '(' after " + kind + " name.");
-    std::vector<std::shared_ptr<Token>> params;
+    std::vector<Token> params;
     if (!check(TokenType::RIGHT_PAREN))
     {
         do
         {
             if (params.size() >= 255) error(peek(), "Can't have more than 255 parameters.");
 
-            auto token = std::make_shared<Token>(consume(TokenType::IDENTIFIER, "Expect parameter name."));
+            auto token = consume(TokenType::IDENTIFIER, "Expect parameter name.");
             params.emplace_back(token);
         } while (match({TokenType::COMMA}));
     }

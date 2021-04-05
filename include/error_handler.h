@@ -19,7 +19,7 @@ public:
 class RuntimeError : public std::exception
 {
 public:
-    explicit RuntimeError(Token op, std::string msg)
+    RuntimeError(Token op, std::string msg)
         : m_op(std::move(op))
         , m_msg(std::move(msg))
     {
@@ -44,11 +44,12 @@ public:
     }
 
     void error(const Token& token, const std::string& msg);
-    void error(unsigned int line, unsigned int column, char character, const std::string& src_str,
+    void error(int line, int column, char character, const std::string& src_str,
                const std::string& msg);
     void runtime_error(const RuntimeError& error);
+    void debug_error(const std::string& msg, int line);
 
-    void debug_error(const std::string& msg);
+    void warning(const std::string& msg) const;
 
     bool m_had_error = false;
     bool m_had_runtime_error = false;
@@ -58,7 +59,7 @@ private:
 
     std::string format_error(const Token& token);
 
-    void report(unsigned int line, unsigned int column, const std::string& where, const std::string& src_str,
+    void report(int line, int column, const std::string& where, const std::string& src_str,
                 const std::string& msg);
 };
 

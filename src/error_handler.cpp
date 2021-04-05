@@ -22,7 +22,7 @@ void ErrorHandler::error(const Token& token, const std::string& msg)
         report(token.get_line(), token.get_column(), "at '" + token.get_lexeme() + "'", formatted_line, msg);
 }
 
-void ErrorHandler::error(unsigned int line, unsigned int column, char character, const std::string& src_str,
+void ErrorHandler::error(int line, int column, char character, const std::string& src_str,
                          const std::string& msg)
 {
     report(line, column, std::string(1, character), src_str, msg);
@@ -34,9 +34,17 @@ void ErrorHandler::runtime_error(const RuntimeError& error)
     m_had_runtime_error = true;
 }
 
-void ErrorHandler::debug_error(const std::string& msg)
+void ErrorHandler::debug_error(const std::string& msg, int line)
 {
-    std::cout << "Internal error at " << __FILE__ << " line" << __LINE__ << ": " << msg << '\n';
+    fmt::print("\n[line {}]", line);
+    fmt::print(fmt::emphasis::italic | fg(fmt::color::red), " Internal error in ");
+    fmt::print(fmt::emphasis::bold | fg(fmt::color::deep_pink), "{}:\n\n", __FILE__);
+    fmt::print(fmt::emphasis::bold | fg(fmt::color::white), "\t{}\n\n", msg);
+}
+
+void ErrorHandler::warning(const std::string& msg) const
+{
+    fmt::print(fmt::emphasis::italic | fg(fmt::color::yellow), " Warning: {}\n\n", msg);
 }
 
 std::string ErrorHandler::format_error(const Token& token)
@@ -47,7 +55,7 @@ std::string ErrorHandler::format_error(const Token& token)
     // because I wanted the token to be colored differently from the rest of the line
 
     // part of the line before the token that caused the error
-    unsigned int column = token.get_column();
+    int column = token.get_column();
     std::string before_token_line =
         fmt::format(fg(fmt::color::dark_olive_green), "{}", source_line.substr(0, column - token.get_lexeme().size()));
     std::string token_str = fmt::format(fg(fmt::color::red), "{}", token.get_lexeme());
@@ -57,10 +65,10 @@ std::string ErrorHandler::format_error(const Token& token)
     return before_token_line + token_str + after_token_line;
 }
 
-void ErrorHandler::report(unsigned int line, unsigned int column, const std::string& where, const std::string& src_str,
+void ErrorHandler::report(int line, int column, const std::string& where, const std::string& src_str,
                           const std::string& msg)
 {
-    fmt::print("[{}, {}]", line, column);
+    fmt::print("\n[{}, {}]", line, column);
     fmt::print(fmt::emphasis::italic | fg(fmt::color::red), " Error {}: {}\n\n", where, msg);
     fmt::print(fg(fmt::color::dark_olive_green), "\t{}\n\n", src_str);
     m_had_error = true;

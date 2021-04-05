@@ -1,14 +1,15 @@
-#include "scanner.h"
-#include "parser.h"
-#include "token.h"
 #include "interpreter.h"
+#include "parser.h"
+#include "resolver.h"
+#include "scanner.h"
+#include "token.h"
 
 int main(int argc, char** argv)
 {
     using namespace cpplox;
 
     Scanner scanner;
-    Interpreter interpreter;
+    auto interpreter = std::make_shared<Interpreter>();
 
     if (argc > 2)
     {
@@ -21,10 +22,14 @@ int main(int argc, char** argv)
 
         Parser parser{tokens.value()};
         std::optional<std::vector<StatementPtr>> statements = parser.parse();
-        if (!statements.has_value())
-            std::exit(65);
+        if (ErrorHandler::get_instance().m_had_error) std::exit(65);
 
-        interpreter.interpret(statements.value());
+        Resolver resolver{interpreter};
+        resolver.resolve(statements.value());
+
+        if (ErrorHandler::get_instance().m_had_error) std::exit(65);
+
+        interpreter->interpret(statements.value());
     }
     else
     {
@@ -35,14 +40,17 @@ int main(int argc, char** argv)
 
             Parser parser{tokens};
             std::optional<std::vector<StatementPtr>> statements = parser.parse();
-            if (!statements.has_value())
-                continue;
+            if (ErrorHandler::get_instance().m_had_error) continue;
 
-            interpreter.interpret(statements.value());
+            Resolver resolver{interpreter};
+            resolver.resolve(statements.value());
+
+            if (ErrorHandler::get_instance().m_had_error) continue;
+
+            interpreter->interpret(statements.value());
 
             std::cout << '\n';
         }
-
     }
 
     return 0;

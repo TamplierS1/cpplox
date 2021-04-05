@@ -84,7 +84,7 @@ private:
     void synchronize();
 
     const std::vector<Token> m_tokens;
-    unsigned int m_current = 0;
+    int m_current = 0;
 };
 }
 

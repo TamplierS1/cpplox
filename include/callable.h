@@ -2,6 +2,7 @@
 #define CALLABLE_H
 
 #include <vector>
+#include <string>
 
 namespace cpplox
 {
@@ -15,7 +16,8 @@ public:
     virtual ~Callable() = default;
     virtual Value call(Interpreter* interpreter, const std::vector<Value>& args) = 0;
     // returns number of arguments
-    [[nodiscard]] virtual unsigned int arity() const = 0;
+    [[nodiscard]] virtual int arity() const = 0;
+    [[nodiscard]] virtual std::string to_string() const = 0;
 };
 
 }

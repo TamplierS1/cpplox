@@ -72,7 +72,7 @@ class Binary : public Expression
 public:
     Binary(const std::shared_ptr<Expression>& left, const Token& op, const std::shared_ptr<Expression>& right)
         : m_left(left)
-        , m_op(std::make_shared<Token>(op))
+        , m_op(op)
         , m_right(right)
     {
     }
@@ -83,7 +83,7 @@ public:
     }
 
     std::shared_ptr<Expression> m_left;
-    std::shared_ptr<Token> m_op;
+    Token m_op;
     std::shared_ptr<Expression> m_right;
 };
 
@@ -107,7 +107,7 @@ class Unary : public Expression
 {
 public:
     Unary(const Token& op, const std::shared_ptr<Expression>& right)
-        : m_op(std::make_shared<Token>(op))
+        : m_op(op)
         , m_right(right)
     {
     }
@@ -117,7 +117,7 @@ public:
         return visitor->visit(this);
     }
 
-    std::shared_ptr<Token> m_op;
+    Token m_op;
     std::shared_ptr<Expression> m_right;
 };
 
@@ -125,7 +125,7 @@ class Variable : public Expression
 {
 public:
     explicit Variable(const Token& name)
-        : m_name(std::make_shared<Token>(name))
+        : m_name(name)
     {
     }
 
@@ -134,14 +134,14 @@ public:
         return visitor->visit(this);
     }
 
-    std::shared_ptr<Token> m_name;
+    Token m_name;
 };
 
 class Assign : public Expression
 {
 public:
     Assign(const Token& name, const std::shared_ptr<Expression>& value)
-        : m_name(std::make_shared<Token>(name))
+        : m_name(name)
         , m_value(value)
     {
     }
@@ -151,7 +151,7 @@ public:
         return visitor->visit(this);
     }
 
-    std::shared_ptr<Token> m_name;
+    Token m_name;
     std::shared_ptr<Expression> m_value;
 };
 
@@ -160,7 +160,7 @@ class Logical : public Expression
 public:
     Logical(const std::shared_ptr<Expression>& left, const Token& op, const std::shared_ptr<Expression>& right)
         : m_left(left)
-        , m_op(std::make_shared<Token>(op))
+        , m_op(op)
         , m_right(right)
     {
     }
@@ -171,7 +171,7 @@ public:
     }
 
     std::shared_ptr<Expression> m_left;
-    std::shared_ptr<Token> m_op;
+    Token m_op;
     std::shared_ptr<Expression> m_right;
 };
 
@@ -181,7 +181,7 @@ public:
     Call(const std::shared_ptr<Expression>& callee, const Token& paren,
          const std::vector<std::shared_ptr<Expression>>& args)
         : m_callee(callee)
-        , m_paren(std::make_shared<Token>(paren))
+        , m_paren(paren)
         , m_args(args)
     {
     }
@@ -193,14 +193,14 @@ public:
 
     // callee is the thing being called
     std::shared_ptr<Expression> m_callee;
-    std::shared_ptr<Token> m_paren;
+    Token m_paren;
     std::vector<std::shared_ptr<Expression>> m_args;
 };
 
 class Lambda : public Expression
 {
 public:
-    Lambda(const std::vector<std::shared_ptr<Token>>& params, const std::vector<std::shared_ptr<cpplox::ast::stmt::Statement>>& body)
+    Lambda(const std::vector<Token>& params, const std::vector<std::shared_ptr<cpplox::ast::stmt::Statement>>& body)
         : m_params(params)
         , m_body(body)
     {
@@ -211,7 +211,7 @@ public:
         return visitor->visit(this);
     }
 
-    std::vector<std::shared_ptr<Token>> m_params;
+    std::vector<Token> m_params;
     std::vector<std::shared_ptr<cpplox::ast::stmt::Statement>> m_body;
 };
 

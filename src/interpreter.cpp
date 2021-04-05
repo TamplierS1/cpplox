@@ -2,15 +2,22 @@
 
 namespace cpplox
 {
-
 Interpreter::Interpreter()
 {
-    m_globals = std::make_shared<Environment>();
-    m_env = m_globals;
+    register_native_funcs();
+}
 
-    auto clock = std::make_shared<ClockFunction>();
-    // define native `clock()` function that measures time
-    m_globals->define("clock", std::dynamic_pointer_cast<Callable>(clock));
+Interpreter::~Interpreter() noexcept
+{
+    for (auto &expr : m_locals)
+    {
+        /* TODO: this causes a double free and crashes the interpreter.
+         *  Probably because I got those pointers from `get()` method of a shared pointer,
+         *  that is freed automatically. So even if I don't free the pointers in this class
+         *  they're going to get freed anyway.
+         */
+        // delete expr.first;
+    }
 }
 
 void Interpreter::interpret(std::vector<StatementPtr> &stmts)
@@ -30,13 +37,11 @@ void Interpreter::interpret(std::vector<StatementPtr> &stmts)
 
 Value Interpreter::visit(expr::Literal *expr)
 {
-    // just return the literal value, that we put there earlier in the scanner
     return *expr->m_value;
 }
 
 Value Interpreter::visit(expr::Grouping *expr)
 {
-    // to evaluate parenthesis just evaluate the expression inside them
     return evaluate(expr->m_expression.get());
 }
 
@@ -44,10 +49,10 @@ Value Interpreter::visit(expr::Unary *expr)
 {
     Value right = evaluate(expr->m_right.get());
 
-    switch (expr->m_op->get_token_type())
+    switch (expr->m_op.get_token_type())
     {
         case TokenType::MINUS:
-            check_number_operands(*expr->m_op, right);
+            check_number_operands(expr->m_op, right);
             // a unary minus can only be applied to numbers and that's why we convert the expression to double
             return -std::get<double>(right.m_value.value());
         case TokenType::BANG:
@@ -73,52 +78,40 @@ Value Interpreter::visit(expr::Binary *expr)
         is_numbers = true;
     }
 
-    switch (expr->m_op->get_token_type())
+    switch (expr->m_op.get_token_type())
     {
             /* Arithmetic */
         case TokenType::MINUS:
-            check_number_operands(*expr->m_op, left, right);
+            check_number_operands(expr->m_op, left, right);
             return dleft - dright;
         case TokenType::PLUS:
             if (is_numbers) return dleft + dright;
 
-            if (std::holds_alternative<std::string>(left.m_value.value()) &&
+            if (std::holds_alternative<std::string>(left.m_value.value()) ||
                 std::holds_alternative<std::string>(right.m_value.value()))
             {
-                return std::get<std::string>(left.m_value.value()) + std::get<std::string>(right.m_value.value());
+                return left.to_string() + right.to_string();
             }
 
-            // if one of the values is a string,
-            // the other one is converted to a string and concatenated
-            if (std::holds_alternative<std::string>(left.m_value.value()))
-            {
-                return std::get<std::string>(left.m_value.value()) +
-                       trim_zeroes(std::to_string(std::get<double>(right.m_value.value())));
-            }
-            else if (std::holds_alternative<std::string>(right.m_value.value()))
-            {
-                return trim_zeroes(std::to_string(std::get<double>(left.m_value.value()))) +
-                       std::get<std::string>(right.m_value.value());
-            }
         case TokenType::SLASH:
-            check_number_operands(*expr->m_op, left, right);
-            if (dright == 0) throw RuntimeError{*expr->m_op, "Cannot divide by zero."};
+            check_number_operands(expr->m_op, left, right);
+            if (dright == 0) throw RuntimeError{expr->m_op, "Cannot divide by zero."};
             return dleft / dright;
         case TokenType::STAR:
-            check_number_operands(*expr->m_op, left, right);
+            check_number_operands(expr->m_op, left, right);
             return dleft * dright;
             /* Comparison */
         case TokenType::GREATER:
-            check_number_operands(*expr->m_op, left, right);
+            check_number_operands(expr->m_op, left, right);
             return dleft > dright;
         case TokenType::GREATER_EQUAL:
-            check_number_operands(*expr->m_op, left, right);
+            check_number_operands(expr->m_op, left, right);
             return dleft >= dright;
         case TokenType::LESS:
-            check_number_operands(*expr->m_op, left, right);
+            check_number_operands(expr->m_op, left, right);
             return dleft < dright;
         case TokenType::LESS_EQUAL:
-            check_number_operands(*expr->m_op, left, right);
+            check_number_operands(expr->m_op, left, right);
             return dleft <= dright;
         case TokenType::BANG_EQUAL:
             return !is_equal(left, right);
@@ -131,18 +124,21 @@ Value Interpreter::visit(expr::Binary *expr)
 
 Value Interpreter::visit(expr::Variable *expr)
 {
-    Value var = m_env->get(*expr->m_name);
-    // report a runtime error if the variable is uninitialized
-    if (!var.m_value.has_value())
-        throw RuntimeError{*expr->m_name, "Variable '" + expr->m_name->get_lexeme() + "' is uninitialized."};
-
-    return var;
+    return lookup_variable(expr->m_name, expr);
 }
 
 Value Interpreter::visit(expr::Assign *expr)
 {
     Value val = evaluate(expr->m_value.get());
-    m_env->assign(*expr->m_name, val);
+
+    auto distance = m_locals.find(expr);
+    if (distance != m_locals.end())
+    {
+        m_env->assign_at(distance->second, expr->m_name, val);
+    }
+    else
+        m_globals->assign(expr->m_name, val);
+
     return val;
 }
 
@@ -150,7 +146,7 @@ Value Interpreter::visit(expr::Logical *expr)
 {
     Value left = evaluate(expr->m_left.get());
 
-    if (expr->m_op->get_token_type() == TokenType::OR)
+    if (expr->m_op.get_token_type() == TokenType::OR)
     {
         if (is_true(left)) return left;
     }
@@ -175,7 +171,7 @@ Value Interpreter::visit(expr::Call *expr)
     // check if the `callee` is actually something we can call
     if (dynamic_cast<Callable *>(std::get<std::shared_ptr<Callable>>(callee.m_value.value()).get()) == nullptr)
     {
-        throw RuntimeError{*expr->m_paren, "Can only call functions and classes."};
+        throw RuntimeError{expr->m_paren, "Can only call functions and classes."};
     }
 
     auto function = std::get<std::shared_ptr<Callable>>(callee.m_value.value());
@@ -183,8 +179,8 @@ Value Interpreter::visit(expr::Call *expr)
     // check for right number of arguments
     if (args.size() != function->arity())
     {
-        throw RuntimeError{*expr->m_paren, "Expected " + std::to_string(function->arity()) + " arguments, but got " +
-                                               std::to_string(args.size()) + "."};
+        throw RuntimeError{expr->m_paren, "Expected " + std::to_string(function->arity()) + " arguments, but got " +
+                                              std::to_string(args.size()) + "."};
     }
 
     return function->call(this, args);
@@ -205,6 +201,7 @@ void Interpreter::visit(stmt::Expression *stmt)
 void Interpreter::visit(stmt::Print *stmt)
 {
     Value value = evaluate(stmt->m_expr.get());
+    // TODO: provide formatter<T> specialization, which will allow me to use fmt::print
     std::cout << value;
 }
 
@@ -216,12 +213,16 @@ void Interpreter::visit(stmt::Var *stmt)
         value = evaluate(stmt->m_initializer->get());
     }
 
-    m_env->define(stmt->m_name->get_lexeme(), value);
+    m_env->define(stmt->m_name.get_lexeme(), value);
 }
 
 void Interpreter::visit(stmt::Block *stmt)
 {
-    execute_block(stmt->m_statements, std::make_shared<Environment>(m_env));
+    /* TODO: there is a leak here. I throw an exception in `execute_block()`
+        and we never get back here to free `env`
+    */
+    auto env = std::make_shared<Environment>(m_env);
+    execute_block(stmt->m_statements, env);
 }
 
 void Interpreter::visit(stmt::If *stmt)
@@ -248,7 +249,7 @@ void Interpreter::visit(stmt::Function *stmt)
 {
     auto statement = std::make_shared<stmt::Function>(*stmt);
     auto function = std::make_shared<Function>(statement, m_env);
-    m_env->define(stmt->m_name->get_lexeme(), std::dynamic_pointer_cast<Callable>(function));
+    m_env->define(stmt->m_name.get_lexeme(), std::dynamic_pointer_cast<Callable>(function));
 }
 
 void Interpreter::visit(stmt::Return *stmt)
@@ -259,19 +260,6 @@ void Interpreter::visit(stmt::Return *stmt)
     // using exceptions for returning from functions is fucking horrible,
     // but I couldn't come up with anything else
     throw Return{value};
-}
-
-Value Interpreter::evaluate(expr::Expression *expr)
-{
-    return expr->accept(this);
-}
-
-void Interpreter::execute(stmt::Statement *stmt)
-{
-    // skip statements with errors
-    if (stmt == nullptr) return;
-
-    stmt->accept(this);
 }
 
 void Interpreter::execute_block(const std::vector<StatementPtr> &statements, const std::shared_ptr<Environment> &env)
@@ -289,13 +277,65 @@ void Interpreter::execute_block(const std::vector<StatementPtr> &statements, con
             execute(statement.get());
         }
     }
-    catch(...)
+    catch (...)
     {
         m_env = previous;
         throw;
     }
 
     m_env = previous;
+}
+
+void Interpreter::resolve(expr::Expression *expr, int depth)
+{
+    m_locals.emplace(expr, depth);
+}
+
+Value Interpreter::evaluate(expr::Expression *expr)
+{
+    return expr->accept(this);
+}
+
+void Interpreter::execute(stmt::Statement *stmt)
+{
+    // skip statements with errors
+    if (stmt == nullptr) return;
+
+    stmt->accept(this);
+}
+
+Value Interpreter::lookup_variable(const Token &name, expr::Expression *expr)
+{
+    auto distance = m_locals.find(expr);
+
+    Value val = std::nullopt;
+    if (distance != m_locals.end())
+        val = m_env->get_at(distance->second, name.get_lexeme());
+    else
+        val = m_globals->get(name);
+
+    check_null(val, name);
+    return val;
+}
+
+void Interpreter::check_null(const Value &value, const Token &name)
+{
+    // report a runtime error if the variable is uninitialized
+    if (!value.m_value.has_value()) throw RuntimeError{name, "Variable '" + name.get_lexeme() + "' is uninitialized."};
+}
+
+void Interpreter::register_native_funcs()
+{
+    m_globals = std::make_shared<Environment>();
+    m_env = m_globals;
+
+    // clock()
+    auto clock = std::make_shared<ClockFunction>();
+    m_globals->define("clock", std::dynamic_pointer_cast<Callable>(clock));
+
+    // println()
+    auto println = std::make_shared<PrintlnFunction>();
+    m_globals->define("println", std::dynamic_pointer_cast<Callable>(println));
 }
 
 bool Interpreter::is_true(const Value &val)

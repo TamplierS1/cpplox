@@ -16,8 +16,8 @@ public:
     }
 
     Value call(Interpreter* interpreter, const std::vector<Value>& args) override;
-    [[nodiscard]] unsigned int arity() const override;
-    [[nodiscard]] std::string to_string() const;
+    [[nodiscard]] int arity() const override;
+    [[nodiscard]] std::string to_string() const override;
 
 private:
     std::shared_ptr<ast::expr::Lambda> m_declaration;
