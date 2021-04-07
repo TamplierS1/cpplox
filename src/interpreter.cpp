@@ -1,23 +1,12 @@
 #include "interpreter.h"
 
+#include "instance.h"
+
 namespace cpplox
 {
 Interpreter::Interpreter()
 {
     register_native_funcs();
-}
-
-Interpreter::~Interpreter() noexcept
-{
-    for (auto &expr : m_locals)
-    {
-        /* TODO: this causes a double free and crashes the interpreter.
-         *  Probably because I got those pointers from `get()` method of a shared pointer,
-         *  that is freed automatically. So even if I don't free the pointers in this class
-         *  they're going to get freed anyway.
-         */
-        // delete expr.first;
-    }
 }
 
 void Interpreter::interpret(std::vector<StatementPtr> &stmts)
@@ -85,7 +74,8 @@ Value Interpreter::visit(expr::Binary *expr)
             check_number_operands(expr->m_op, left, right);
             return dleft - dright;
         case TokenType::PLUS:
-            if (is_numbers) return dleft + dright;
+            if (is_numbers)
+                return dleft + dright;
 
             if (std::holds_alternative<std::string>(left.m_value.value()) ||
                 std::holds_alternative<std::string>(right.m_value.value()))
@@ -95,7 +85,8 @@ Value Interpreter::visit(expr::Binary *expr)
 
         case TokenType::SLASH:
             check_number_operands(expr->m_op, left, right);
-            if (dright == 0) throw RuntimeError{expr->m_op, "Cannot divide by zero."};
+            if (dright == 0)
+                throw RuntimeError{expr->m_op, "Cannot divide by zero."};
             return dleft / dright;
         case TokenType::STAR:
             check_number_operands(expr->m_op, left, right);
@@ -148,11 +139,13 @@ Value Interpreter::visit(expr::Logical *expr)
 
     if (expr->m_op.get_token_type() == TokenType::OR)
     {
-        if (is_true(left)) return left;
+        if (is_true(left))
+            return left;
     }
     else
     {
-        if (!is_true(left)) return left;
+        if (!is_true(left))
+            return left;
     }
 
     return evaluate(expr->m_right.get());
@@ -169,7 +162,11 @@ Value Interpreter::visit(expr::Call *expr)
     }
 
     // check if the `callee` is actually something we can call
-    if (dynamic_cast<Callable *>(std::get<std::shared_ptr<Callable>>(callee.m_value.value()).get()) == nullptr)
+    try
+    {
+        std::get<std::shared_ptr<Callable>>(callee.m_value.value());
+    }
+    catch (std::bad_variant_access &e)
     {
         throw RuntimeError{expr->m_paren, "Can only call functions and classes."};
     }
@@ -191,6 +188,55 @@ Value Interpreter::visit(expr::Lambda *expr)
     auto lambda_expr = std::make_shared<expr::Lambda>(*expr);
     auto lambda = std::make_shared<Lambda>(lambda_expr);
     return std::dynamic_pointer_cast<Callable>(lambda);
+}
+
+Value Interpreter::visit(expr::Get *expr)
+{
+    Value object = evaluate(expr->m_object.get());
+    switch (object.m_value->index())
+    {
+        case 3:
+        {
+            // Static method call
+            auto callable = std::get<std::shared_ptr<Callable>>(object.m_value.value());
+            auto class_instance = std::dynamic_pointer_cast<Class>(callable);
+            if (class_instance == nullptr)
+                throw RuntimeError{expr->m_name, "Only instances and classes have properties."};
+
+            return class_instance->get(expr->m_name);
+        }
+        case 4:
+        {
+            // `instance.property` syntax
+            return std::get<std::shared_ptr<Instance>>(object.m_value.value())->get(expr->m_name);
+        }
+        default:
+            throw RuntimeError{expr->m_name, "Only instances and classes have properties."};
+    }
+}
+
+Value Interpreter::visit(expr::Set *expr)
+{
+    Value object = evaluate(expr->m_object.get());
+
+    try
+    {
+        // try to get an instance
+        std::get<std::shared_ptr<Instance>>(object.m_value.value());
+    }
+    catch (std::bad_variant_access &e)
+    {
+        throw RuntimeError{expr->m_name, "Only instances have fields."};
+    }
+
+    Value value = evaluate(expr->m_value.get());
+    std::get<std::shared_ptr<Instance>>(object.m_value.value())->set(expr->m_name, value);
+    return value;
+}
+
+Value Interpreter::visit(expr::This *expr)
+{
+    return lookup_variable(expr->m_keyword, expr);
 }
 
 void Interpreter::visit(stmt::Expression *stmt)
@@ -255,11 +301,32 @@ void Interpreter::visit(stmt::Function *stmt)
 void Interpreter::visit(stmt::Return *stmt)
 {
     Value value = std::nullopt;
-    if (stmt->m_value.has_value()) value = evaluate(stmt->m_value->get());
+    if (stmt->m_value.has_value())
+        value = evaluate(stmt->m_value->get());
 
     // using exceptions for returning from functions is fucking horrible,
     // but I couldn't come up with anything else
     throw Return{value};
+}
+
+void Interpreter::visit(stmt::Class *stmt)
+{
+    m_env->define(stmt->m_name.get_lexeme(), std::nullopt);
+
+    std::unordered_map<std::string, std::shared_ptr<Function>> methods;
+    for (const auto &method : stmt->m_methods)
+    {
+        bool is_initializer = method->m_name.get_lexeme() == "init";
+        bool is_static =
+            std::find(method->m_prefix.begin(), method->m_prefix.end(), "static") != method->m_prefix.end();
+
+        auto function = std::make_shared<Function>(method, m_env, is_initializer, is_static);
+        methods.emplace(method->m_name.get_lexeme(), function);
+    }
+
+    auto klass = std::make_shared<Class>(stmt->m_name.get_lexeme(), methods);
+
+    m_env->assign(stmt->m_name, std::dynamic_pointer_cast<Callable>(klass));
 }
 
 void Interpreter::execute_block(const std::vector<StatementPtr> &statements, const std::shared_ptr<Environment> &env)
@@ -299,7 +366,8 @@ Value Interpreter::evaluate(expr::Expression *expr)
 void Interpreter::execute(stmt::Statement *stmt)
 {
     // skip statements with errors
-    if (stmt == nullptr) return;
+    if (stmt == nullptr)
+        return;
 
     stmt->accept(this);
 }
@@ -321,7 +389,8 @@ Value Interpreter::lookup_variable(const Token &name, expr::Expression *expr)
 void Interpreter::check_null(const Value &value, const Token &name)
 {
     // report a runtime error if the variable is uninitialized
-    if (!value.m_value.has_value()) throw RuntimeError{name, "Variable '" + name.get_lexeme() + "' is uninitialized."};
+    if (!value.m_value.has_value())
+        throw RuntimeError{name, "Variable '" + name.get_lexeme() + "' is uninitialized."};
 }
 
 void Interpreter::register_native_funcs()
@@ -341,8 +410,10 @@ void Interpreter::register_native_funcs()
 bool Interpreter::is_true(const Value &val)
 {
     // only `nil` and `false` are false in cpplox
-    if (val.m_value == std::nullopt) return false;
-    if (std::holds_alternative<bool>(val.m_value.value())) return std::get<bool>(val.m_value.value());
+    if (val.m_value == std::nullopt)
+        return false;
+    if (std::holds_alternative<bool>(val.m_value.value()))
+        return std::get<bool>(val.m_value.value());
 
     return true;
 }
@@ -351,15 +422,18 @@ bool Interpreter::is_equal(const Value &val1, const Value &val2)
 {
     // if both values are `nil` they are equal
     // useful when checking if the value is null
-    if (val1.m_value == std::nullopt && val2.m_value == std::nullopt) return true;
-    if (val1.m_value == std::nullopt) return false;
+    if (val1.m_value == std::nullopt && val2.m_value == std::nullopt)
+        return true;
+    if (val1.m_value == std::nullopt)
+        return false;
 
     return val1.m_value.value() == val2.m_value.value();
 }
 
 void Interpreter::check_number_operands(const Token &op, const Value &operand)
 {
-    if (std::holds_alternative<double>(operand.m_value.value())) return;
+    if (std::holds_alternative<double>(operand.m_value.value()))
+        return;
 
     throw RuntimeError{op, "Operand must be a number."};
 }

@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "class.h"
 #include "environment.h"
 #include "error_handler.h"
 #include "fmt/core.h"
@@ -22,7 +23,6 @@ class Interpreter : public expr::Visitor, stmt::Visitor
 {
 public:
     Interpreter();
-    ~Interpreter() noexcept override;
 
     void interpret(std::vector<StatementPtr>& stmts);
 
@@ -36,6 +36,9 @@ public:
     Value visit(expr::Logical* expr) override;
     Value visit(expr::Call* expr) override;
     Value visit(expr::Lambda* expr) override;
+    Value visit(expr::Get* expr) override;
+    Value visit(expr::Set* expr) override;
+    Value visit(expr::This* expr) override;
 
     // statements
     void visit(stmt::Expression* stmt) override;
@@ -46,6 +49,7 @@ public:
     void visit(stmt::While* stmt) override;
     void visit(stmt::Function* stmt) override;
     void visit(stmt::Return* stmt) override;
+    void visit(stmt::Class* stmt) override;
 
     void execute_block(const std::vector<StatementPtr>& statements, const std::shared_ptr<Environment>& env);
     void resolve(expr::Expression* expr, int depth);

@@ -13,6 +13,7 @@ class If;
 class While;
 class Function;
 class Return;
+class Class;
 
 // Interface that represents an operation executed on the given statements
 class Visitor
@@ -27,6 +28,7 @@ public:
     virtual void visit(While* stmt) = 0;
     virtual void visit(Function* stmt) = 0;
     virtual void visit(Return* stmt) = 0;
+    virtual void visit(Class* stmt) = 0;
 
 protected:
     virtual ~Visitor() = default;
@@ -153,11 +155,11 @@ public:
 class Function : public Statement
 {
 public:
-    Function(const Token& name, const std::vector<Token>& params,
-             const std::vector<std::shared_ptr<Statement>>& body)
+    Function(const Token& name, const std::vector<Token>& params, const std::vector<std::shared_ptr<Statement>>& body, const std::vector<Token>& prefix)
         : m_name(name)
         , m_params(params)
         , m_body(body)
+        , m_prefix(prefix)
     {
     }
 
@@ -169,6 +171,8 @@ public:
     Token m_name;
     std::vector<Token> m_params;
     std::vector<std::shared_ptr<Statement>> m_body;
+    // Optional keywords that appear before function name
+    std::vector<Token> m_prefix;
 };
 
 class Return : public Statement
@@ -187,6 +191,24 @@ public:
 
     Token m_keyword;
     std::optional<ExpressionPtr> m_value;
+};
+
+class Class : public Statement
+{
+public:
+    Class(const Token& name, const std::vector<std::shared_ptr<stmt::Function>>& methods)
+        : m_name(name)
+        , m_methods(methods)
+    {
+    }
+
+    void accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    Token m_name;
+    std::vector<std::shared_ptr<stmt::Function>> m_methods;
 };
 }
 

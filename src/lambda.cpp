@@ -25,14 +25,4 @@ Value Lambda::call(Interpreter *interpreter, const std::vector<Value> &args)
     return std::nullopt;
 }
 
-int Lambda::arity() const
-{
-    return m_declaration->m_params.size();
-}
-
-std::string Lambda::to_string() const
-{
-    return "<fn lambda>";
-}
-
 }

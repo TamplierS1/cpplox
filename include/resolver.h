@@ -20,10 +20,21 @@ using Scope = std::unordered_map<std::string, bool>;
 // Resolves variable bindings (except global variables)
 class Resolver : public stmt::Visitor, expr::Visitor
 {
+    // Used to determine whether we're in a function or a method
+    // or maybe in global scope. It helps to detect `return` outside of
+    // functions and methods.
     enum class FunctionType
     {
         NONE,
-        FUNCTION
+        FUNCTION,
+        INITIALIZER,
+        METHOD
+    };
+    // Used to detect `this` expression outside of methods.
+    enum class ClassType
+    {
+        NONE,
+        CLASS
     };
 
 public:
@@ -40,6 +51,7 @@ public:
     void visit(stmt::Print* stmt) override;
     void visit(stmt::Return* stmt) override;
     void visit(stmt::While* stmt) override;
+    void visit(stmt::Class* stmt) override;
 
     Value visit(expr::Variable* expr) override;
     Value visit(expr::Assign* expr) override;
@@ -50,6 +62,9 @@ public:
     Value visit(expr::Literal* expr) override;
     Value visit(expr::Logical* expr) override;
     Value visit(expr::Unary* expr) override;
+    Value visit(expr::Get* expr) override;
+    Value visit(expr::Set* expr) override;
+    Value visit(expr::This* expr) override;
 
     void resolve(const std::vector<StatementPtr>& stmts);
 
@@ -65,11 +80,15 @@ private:
     void declare(const Token& name);
     void define(const Token& name);
 
+    // Check if declared prefixes are allowed on a given function
+    void check_prefixes(stmt::Function* function, FunctionType type);
+
     // scopes that are currently in scope
     std::deque<Scope> m_scopes;
     std::weak_ptr<Interpreter> m_interpreter;
 
     FunctionType m_current_func = FunctionType::NONE;
+    ClassType m_current_class = ClassType::NONE;
 };
 
 }
