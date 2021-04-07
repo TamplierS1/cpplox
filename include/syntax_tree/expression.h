@@ -22,6 +22,9 @@ class Assign;
 class Logical;
 class Call;
 class Lambda;
+class Get;
+class Set;
+class This;
 
 // Interface that represents an operation executed on the given expressions
 class Visitor
@@ -36,6 +39,9 @@ public:
     virtual Value visit(Logical* expr) = 0;
     virtual Value visit(Call* expr) = 0;
     virtual Value visit(Lambda* expr) = 0;
+    virtual Value visit(Get* expr) = 0;
+    virtual Value visit(Set* expr) = 0;
+    virtual Value visit(This* expr) = 0;
 
 protected:
     virtual ~Visitor() = default;
@@ -213,6 +219,60 @@ public:
 
     std::vector<Token> m_params;
     std::vector<std::shared_ptr<cpplox::ast::stmt::Statement>> m_body;
+};
+
+class Get : public Expression
+{
+public:
+    Get(const std::shared_ptr<Expression>& object, const Token& name)
+        : m_object(object)
+        , m_name(name)
+    {
+    }
+
+    Value accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    std::shared_ptr<Expression> m_object;
+    Token m_name;
+};
+
+class Set : public Expression
+{
+public:
+    Set(const std::shared_ptr<Expression>& object, const Token& name, const std::shared_ptr<Expression>& value)
+        : m_object(object)
+        , m_name(name)
+        , m_value(value)
+    {
+    }
+
+    Value accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    std::shared_ptr<Expression> m_object;
+    Token m_name;
+    std::shared_ptr<Expression> m_value;
+};
+
+class This : public Expression
+{
+public:
+    explicit This(const Token& keyword)
+        : m_keyword(keyword)
+    {
+    }
+
+    Value accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    Token m_keyword;
 };
 
 }

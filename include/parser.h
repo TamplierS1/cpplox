@@ -45,6 +45,7 @@ private:
     ExpressionPtr primary();
 
     StatementPtr declaration();
+    StatementPtr class_declaration();
     // `kind` represents the kind of declaration parsed -
     // a function or a method
     StatementPtr function(const std::string& kind);
@@ -82,6 +83,8 @@ private:
     ParseError error(const Token& token, const std::string& msg);
     // Advances the input to the statement boundary in the process of error recovery
     void synchronize();
+    // Check if a prefix has already been added to the function's list of prefixes
+    bool is_prefix_added(const std::vector<Token>& prefixes, const Token& prefix) const;
 
     const std::vector<Token> m_tokens;
     int m_current = 0;

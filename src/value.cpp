@@ -1,5 +1,7 @@
 #include "value.h"
+
 #include "error_handler.h"
+#include "instance.h"
 
 namespace cpplox
 {
@@ -10,8 +12,7 @@ std::ostream& operator<<(std::ostream& stream, const Value& val)
 
 std::string Value::to_string() const
 {
-    if (!m_value.has_value())
-        return "nil";
+    if (!m_value.has_value()) return "nil";
 
     switch (m_value->index())
     {
@@ -32,6 +33,10 @@ std::string Value::to_string() const
         case 3:
         {
             return std::get<std::shared_ptr<Callable>>(m_value.value())->to_string();
+        }
+        case 4:
+        {
+            return std::get<std::shared_ptr<Instance>>(m_value.value())->to_string();
         }
         case std::variant_npos:
             return "nil";

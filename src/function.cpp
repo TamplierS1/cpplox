@@ -20,19 +20,24 @@ Value Function::call(Interpreter *interpreter, const std::vector<Value> &args)
     }
     catch (Return &return_value)
     {
+        // allow using `return;` in initializers
+        if (m_is_initializer)
+            return m_closure->get_at(0, "this");
+
         return return_value.m_value;
     }
+
+    if (m_is_initializer)
+        return m_closure->get_at(0, "this");
+
     return std::nullopt;
 }
 
-int Function::arity() const
+std::shared_ptr<Function> Function::bind(const std::shared_ptr<Instance> &instance)
 {
-    return m_declaration->m_params.size();
-}
-
-std::string Function::to_string() const
-{
-    return "<fn " + m_declaration->m_name.get_lexeme() + ">";
+    auto env = std::make_shared<Environment>(m_closure);
+    env->define("this", instance);
+    return std::make_shared<Function>(m_declaration, env, m_is_initializer, m_is_static);
 }
 
 }

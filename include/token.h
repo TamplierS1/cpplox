@@ -56,6 +56,8 @@ enum class TokenType
     VAR,
     WHILE,
 
+    PREFIX,
+
     cpplox_EOF
 };
 
@@ -96,6 +98,15 @@ public:
     [[nodiscard]] inline int get_column() const
     {
         return m_column;
+    }
+
+    friend inline bool operator==(const Token& lhs, const Token& rhs)
+    {
+        return lhs.m_token_type == rhs.m_token_type && lhs.m_lexeme == rhs.m_lexeme;
+    }
+    friend inline bool operator==(const Token& lhs, const std::string& rhs)
+    {
+        return lhs.m_lexeme == rhs;
     }
 
 private:

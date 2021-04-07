@@ -17,8 +17,10 @@ std::optional<std::vector<Token>> Scanner::run_file(const std::string& filename)
         // scan the m_source that contains the script file contents
         run();
 
-        if (ErrorHandler::get_instance().m_had_error) std::exit(65);
-        if (ErrorHandler::get_instance().m_had_runtime_error) std::exit(70);
+        if (ErrorHandler::get_instance().m_had_error)
+            std::exit(65);
+        if (ErrorHandler::get_instance().m_had_runtime_error)
+            std::exit(70);
 
         return m_tokens;
     }
@@ -139,7 +141,8 @@ void Scanner::scan_token()
             break;
         default:
             // we encountered a number literal
-            if (std::isdigit(c)) number();
+            if (std::isdigit(c))
+                number();
             // we encountered an identifier
             else if (std::isalpha(c))
                 identifier();
@@ -154,7 +157,8 @@ void Scanner::string()
     // advance the input until you encounter the closing quote or the end of file
     while (peek() != '"' && !is_end())
     {
-        if (peek() == '\n') m_line++;
+        if (peek() == '\n')
+            m_line++;
         advance();
     }
 
@@ -219,7 +223,8 @@ void Scanner::block_comment()
                                                "Unclosed block comment.");
             return;
         }
-        if (peek() == '\n') m_line++;
+        if (peek() == '\n')
+            m_line++;
         // handle nested comments
         if (peek_next() == '*')
             if (peek() == '/')
@@ -252,8 +257,10 @@ bool Scanner::is_end() const
 
 bool Scanner::match(char expected)
 {
-    if (is_end()) return false;
-    if (m_source.at(m_current) != expected) return false;
+    if (is_end())
+        return false;
+    if (m_source.at(m_current) != expected)
+        return false;
 
     m_current++;
     return true;
@@ -267,13 +274,15 @@ char Scanner::advance()
 
 char Scanner::peek()
 {
-    if (is_end()) return '\0';
+    if (is_end())
+        return '\0';
     return m_source.at(m_current);
 }
 
 char Scanner::peek_next()
 {
-    if (m_current + 1 >= m_source.size()) return '\0';
+    if (m_current + 1 >= m_source.size())
+        return '\0';
     return m_source.at(m_current + 1);
 }
 
@@ -283,7 +292,8 @@ void Scanner::update_source_line()
     int new_line = m_current;
     for (char c : m_source.substr(m_current, m_source.size() - m_current))
     {
-        if (c == '\n') break;
+        if (c == '\n')
+            break;
         new_line++;
     }
 
@@ -307,7 +317,7 @@ std::optional<TokenType> Scanner::str_to_keyword(const std::string& str)
         {"if", TokenType::IF},       {"nil", TokenType::NIL},       {"or", TokenType::OR},
         {"print", TokenType::PRINT}, {"return", TokenType::RETURN}, {"super", TokenType::SUPER},
         {"this", TokenType::THIS},   {"true", TokenType::TRUE},     {"var", TokenType::VAR},
-        {"while", TokenType::WHILE}};
+        {"while", TokenType::WHILE}, {"static", TokenType::PREFIX}};
 
     if (keyword_lookup.contains(str))
     {

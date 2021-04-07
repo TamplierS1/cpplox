@@ -10,7 +10,10 @@
 
 namespace cpplox
 {
-using Val = std::optional<std::variant<std::string, double, bool, std::shared_ptr<Callable>>>;
+class Instance;
+
+using Val =
+    std::optional<std::variant<std::string, double, bool, std::shared_ptr<Callable>, std::shared_ptr<Instance>>>;
 
 class Value
 {
@@ -33,6 +36,10 @@ public:
     {
     }
     Value(const std::shared_ptr<Callable>& value)
+        : m_value(value)
+    {
+    }
+    Value(const std::shared_ptr<Instance>& value)
         : m_value(value)
     {
     }
