@@ -2,6 +2,7 @@
 #define INTERPRETER_H
 
 #include <vector>
+#include <deque>
 
 #include "class.h"
 #include "environment.h"
@@ -22,9 +23,14 @@ using namespace ast;
 class Interpreter : public expr::Visitor, stmt::Visitor
 {
 public:
-    Interpreter();
+    explicit Interpreter(const std::deque<StatementPtr>& stmts)
+        : m_to_interpret(stmts)
+    {
+        register_native_funcs();
+    }
 
-    void interpret(std::vector<StatementPtr>& stmts);
+    void interpret();
+    void add_statements(const std::vector<StatementPtr>& new_statements);
 
     // expressions
     Value visit(expr::Literal* expr) override;
@@ -39,6 +45,7 @@ public:
     Value visit(expr::Get* expr) override;
     Value visit(expr::Set* expr) override;
     Value visit(expr::This* expr) override;
+    Value visit(expr::Super* expr) override;
 
     // statements
     void visit(stmt::Expression* stmt) override;
@@ -50,6 +57,7 @@ public:
     void visit(stmt::Function* stmt) override;
     void visit(stmt::Return* stmt) override;
     void visit(stmt::Class* stmt) override;
+    void visit(stmt::Import* stmt) override;
 
     void execute_block(const std::vector<StatementPtr>& statements, const std::shared_ptr<Environment>& env);
     void resolve(expr::Expression* expr, int depth);
@@ -77,6 +85,8 @@ private:
     void check_number_operands(const Token& op, const Value& operand);
     void check_number_operands(const Token& op, const Value& left, const Value& right);
 
+    // Code to interpret
+    std::deque<StatementPtr> m_to_interpret;
     // current scope bindings
     std::shared_ptr<Environment> m_env;
     // resolution information

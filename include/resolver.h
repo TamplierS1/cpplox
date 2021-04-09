@@ -8,6 +8,8 @@
 #include "interpreter.h"
 #include "syntax_tree/expression.h"
 #include "syntax_tree/statement.h"
+#include "parser.h"
+#include "scanner.h"
 
 namespace cpplox
 {
@@ -34,12 +36,15 @@ class Resolver : public stmt::Visitor, expr::Visitor
     enum class ClassType
     {
         NONE,
-        CLASS
+        CLASS,
+        SUBCLASS
     };
 
 public:
-    explicit Resolver(const std::shared_ptr<Interpreter>& interpreter)
+    explicit Resolver(const std::shared_ptr<Interpreter>& interpreter, const std::string& filename, const std::vector<std::string>& search_paths)
         : m_interpreter(interpreter)
+        , m_search_paths(search_paths)
+        , m_filename(filename)
     {
     }
 
@@ -52,6 +57,7 @@ public:
     void visit(stmt::Return* stmt) override;
     void visit(stmt::While* stmt) override;
     void visit(stmt::Class* stmt) override;
+    void visit(stmt::Import* stmt) override;
 
     Value visit(expr::Variable* expr) override;
     Value visit(expr::Assign* expr) override;
@@ -65,6 +71,7 @@ public:
     Value visit(expr::Get* expr) override;
     Value visit(expr::Set* expr) override;
     Value visit(expr::This* expr) override;
+    Value visit(expr::Super* expr) override;
 
     void resolve(const std::vector<StatementPtr>& stmts);
 
@@ -80,12 +87,26 @@ private:
     void declare(const Token& name);
     void define(const Token& name);
 
+    void import_module(const Token& name);
+    // Whether the given module was already imported
+    bool is_imported(const std::string& name);
+
     // Check if declared prefixes are allowed on a given function
     void check_prefixes(stmt::Function* function, FunctionType type);
+
+    void error(const Token& name, const std::string& msg);
+    void warning(const Token& name, const std::string& msg);
 
     // scopes that are currently in scope
     std::deque<Scope> m_scopes;
     std::weak_ptr<Interpreter> m_interpreter;
+
+    // Relative paths to search for modules
+    std::vector<std::string> m_search_paths;
+    // The name of the main script
+    const std::string m_filename;
+    // What modules were already imported
+    std::vector<std::string> m_imported_modules;
 
     FunctionType m_current_func = FunctionType::NONE;
     ClassType m_current_class = ClassType::NONE;

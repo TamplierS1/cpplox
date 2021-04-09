@@ -50,6 +50,7 @@ public:
     void debug_error(const std::string& msg, int line);
 
     void warning(const std::string& msg) const;
+    void warning(const Token& token, const std::string& msg) const;
 
     bool m_had_error = false;
     bool m_had_runtime_error = false;
@@ -57,10 +58,12 @@ public:
 private:
     ErrorHandler() = default;
 
-    std::string format_error(const Token& token);
+    std::string format_msg(const Token& token, fmt::color token_color) const;
 
-    void report(int line, int column, const std::string& where, const std::string& src_str,
+    void report_error(int line, int column, const std::string& where, const std::string& src_str,
                 const std::string& msg);
+    void report_warning(int line, int column, const std::string& where, const std::string& src_str,
+                const std::string& msg) const;
 };
 
 }

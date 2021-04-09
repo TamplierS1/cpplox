@@ -30,16 +30,17 @@ int Class::arity() const
 std::optional<std::shared_ptr<Function>> Class::find_method(const std::string &name) const
 {
     if (m_methods.contains(name))
-    {
         return m_methods.at(name);
-    }
 
+    if (m_super.has_value())
+        return m_super.value()->find_method(name);
+    
     return std::nullopt;
 }
 
 Value Class::get(const Token &name)
 {
-    auto method = find_method(name.get_lexeme());
+    auto method = find_method(name.lexeme());
     if (method.has_value())
     {
         if (method.value()->m_is_static)
@@ -51,7 +52,7 @@ Value Class::get(const Token &name)
             throw RuntimeError{name, "Only static methods can be called from a class."};
     }
 
-    throw RuntimeError{name, "Undefined method '" + name.get_lexeme() + "'."};
+    throw RuntimeError{name, "Undefined method '" + name.lexeme() + "'."};
 }
 
 void Class::set(const Token &name, const Value &value)

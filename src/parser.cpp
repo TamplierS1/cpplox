@@ -18,7 +18,6 @@ std::optional<std::vector<StatementPtr>> Parser::parse()
 
 ExpressionPtr Parser::expression()
 {
-
     return assignment();
 }
 
@@ -210,7 +209,15 @@ ExpressionPtr Parser::primary()
 
     if (match({TokenType::STRING, TokenType::NUMBER}))
     {
-        return std::make_shared<expr::Literal>(previous().get_literal());
+        return std::make_shared<expr::Literal>(previous().literal());
+    }
+
+    if (match({TokenType::SUPER}))
+    {
+        Token keyword = previous();
+        consume(TokenType::DOT, "Expect '.' after 'super'.");
+        Token method = consume(TokenType::IDENTIFIER, "Expect superclass method name.");
+        return std::make_shared<expr::Super>(keyword, method);
     }
 
     if (match({TokenType::THIS}))
@@ -248,6 +255,8 @@ StatementPtr Parser::declaration()
 {
     try
     {
+        if (match({TokenType::IMPORT}))
+            return import();
         if (match({TokenType::CLASS}))
             return class_declaration();
         if (match({TokenType::FUN}))
@@ -267,6 +276,14 @@ StatementPtr Parser::declaration()
 StatementPtr Parser::class_declaration()
 {
     Token name = consume(TokenType::IDENTIFIER, "Expect class name.");
+
+    std::optional<std::shared_ptr<expr::Variable>> superclass = std::nullopt;
+    if (match({TokenType::LESS}))
+    {
+        consume(TokenType::IDENTIFIER, "Expect superclass name.");
+        superclass = std::make_shared<expr::Variable>(previous());
+    }
+
     consume(TokenType::LEFT_BRACE, "Expect '{' before class body.");
 
     std::vector<std::shared_ptr<stmt::Function>> methods;
@@ -277,7 +294,7 @@ StatementPtr Parser::class_declaration()
 
     consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.");
 
-    return std::make_shared<stmt::Class>(name, methods);
+    return std::make_shared<stmt::Class>(name, superclass, methods);
 }
 
 StatementPtr Parser::function(const std::string& kind)
@@ -294,7 +311,7 @@ StatementPtr Parser::function(const std::string& kind)
             prefixes.push_back(token);
         }
         else
-            error(peek(), "Prefix " + token.get_lexeme() + " has already been declared on a function.");
+            error(peek(), "Prefix " + token.lexeme() + " has already been declared on a function.");
     }
 
     Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
@@ -464,6 +481,16 @@ StatementPtr Parser::return_statement()
     return std::make_shared<stmt::Return>(keyword, value);
 }
 
+StatementPtr Parser::import()
+{
+    Token keyword = previous();
+    Token module = consume(TokenType::IDENTIFIER, "Expect module name after 'import'.");
+
+    consume(TokenType::SEMICOLON, "Expect ';' after module name.");
+
+    return std::make_shared<stmt::Import>(keyword, module);
+}
+
 ExpressionPtr Parser::finish_call(const ExpressionPtr& callee)
 {
     std::vector<ExpressionPtr> args;
@@ -516,7 +543,7 @@ bool Parser::check(TokenType type) const
 {
     if (is_end())
         return false;
-    return peek().get_token_type() == type;
+    return peek().token_type() == type;
 }
 
 Token Parser::peek() const
@@ -526,7 +553,7 @@ Token Parser::peek() const
 
 bool Parser::is_end() const
 {
-    return peek().get_token_type() == TokenType::cpplox_EOF;
+    return peek().token_type() == TokenType::cpplox_EOF;
 }
 
 Token Parser::previous() const
@@ -546,10 +573,10 @@ void Parser::synchronize()
 
     while (!is_end())
     {
-        if (previous().get_token_type() == TokenType::SEMICOLON)
+        if (previous().token_type() == TokenType::SEMICOLON)
             return;
 
-        switch (peek().get_token_type())
+        switch (peek().token_type())
         {
             case TokenType::CLASS:
             case TokenType::FUN:

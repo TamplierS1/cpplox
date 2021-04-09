@@ -14,6 +14,7 @@ class While;
 class Function;
 class Return;
 class Class;
+class Import;
 
 // Interface that represents an operation executed on the given statements
 class Visitor
@@ -29,6 +30,7 @@ public:
     virtual void visit(Function* stmt) = 0;
     virtual void visit(Return* stmt) = 0;
     virtual void visit(Class* stmt) = 0;
+    virtual void visit(Import* stmt) = 0;
 
 protected:
     virtual ~Visitor() = default;
@@ -155,7 +157,8 @@ public:
 class Function : public Statement
 {
 public:
-    Function(const Token& name, const std::vector<Token>& params, const std::vector<std::shared_ptr<Statement>>& body, const std::vector<Token>& prefix)
+    Function(const Token& name, const std::vector<Token>& params, const std::vector<std::shared_ptr<Statement>>& body,
+             const std::vector<Token>& prefix)
         : m_name(name)
         , m_params(params)
         , m_body(body)
@@ -196,8 +199,10 @@ public:
 class Class : public Statement
 {
 public:
-    Class(const Token& name, const std::vector<std::shared_ptr<stmt::Function>>& methods)
+    Class(const Token& name, const std::optional<std::shared_ptr<expr::Variable>>& superclass,
+          const std::vector<std::shared_ptr<stmt::Function>>& methods)
         : m_name(name)
+        , m_super(superclass)
         , m_methods(methods)
     {
     }
@@ -208,8 +213,28 @@ public:
     }
 
     Token m_name;
+    std::optional<std::shared_ptr<expr::Variable>> m_super;
     std::vector<std::shared_ptr<stmt::Function>> m_methods;
 };
+
+class Import : public Statement
+{
+public:
+    Import(const Token& keyword, const Token& module)
+        : m_keyword(keyword)
+        , m_module(module)
+    {
+    }
+
+    void accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    Token m_keyword;
+    Token m_module;
+};
+
 }
 
 using StatementPtr = std::shared_ptr<cpplox::ast::stmt::Statement>;

@@ -28,7 +28,7 @@ public:
     }
     [[nodiscard]] inline std::string to_string() const override
     {
-        return "<fn " + m_declaration->m_name.get_lexeme() + ">";
+        return "<fn " + m_declaration->m_name.lexeme() + ">";
     }
     // Bind `this` field to this function's closure.
     // `this` represents the instance the function has been called on.

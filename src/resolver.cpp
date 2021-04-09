@@ -50,12 +50,12 @@ void Resolver::visit(stmt::Print *stmt)
 void Resolver::visit(stmt::Return *stmt)
 {
     if (m_current_func == FunctionType::NONE)
-        ErrorHandler::get_instance().error(stmt->m_keyword, "Can't return from top-level code.");
+        error(stmt->m_keyword, "Can't return from top-level code.");
 
     if (stmt->m_value.has_value())
     {
         if (m_current_func == FunctionType::INITIALIZER)
-            ErrorHandler::get_instance().error(stmt->m_keyword, "Can't return a value from an initializer.");
+            error(stmt->m_keyword, "Can't return a value from an initializer.");
 
         resolve(stmt->m_value->get());
     }
@@ -75,21 +75,45 @@ void Resolver::visit(stmt::Class *stmt)
     declare(stmt->m_name);
     define(stmt->m_name);
 
+    bool super_exists = stmt->m_super.has_value();
+
+    if (super_exists && stmt->m_name.lexeme() == stmt->m_super.value()->m_name.lexeme())
+    {
+        error(stmt->m_super.value()->m_name, "A class can't inherit itself.");
+    }
+
+    if (super_exists)
+    {
+        m_current_class = ClassType::SUBCLASS;
+
+        resolve(stmt->m_super->get());
+
+        begin_scope();
+        m_scopes.back().emplace("super", true);
+    }
+
     begin_scope();
     m_scopes.back().emplace("this", true);
 
     for (const auto &method : stmt->m_methods)
     {
         FunctionType declaration = FunctionType::METHOD;
-        if (method->m_name.get_lexeme() == "init")
+        if (method->m_name.lexeme() == "init")
             declaration = FunctionType::INITIALIZER;
 
         resolve_function(method.get(), declaration);
     }
 
     end_scope();
+    if (super_exists)
+        end_scope();
 
     m_current_class = enclosing_class;
+}
+
+void Resolver::visit(stmt::Import *stmt)
+{
+    import_module(stmt->m_module);
 }
 
 Value Resolver::visit(expr::Variable *expr)
@@ -97,10 +121,10 @@ Value Resolver::visit(expr::Variable *expr)
     if (m_scopes.empty())
         return std::nullopt;
 
-    auto is_ready = m_scopes.back().find(expr->m_name.get_lexeme());
+    auto is_ready = m_scopes.back().find(expr->m_name.lexeme());
     if (is_ready != m_scopes.back().end() && !is_ready->second)
     {
-        cpplox::ErrorHandler::get_instance().error(expr->m_name, "Can't read local variable in its own initializer.");
+        error(expr->m_name, "Can't read local variable in its own initializer.");
     }
 
     resolve_local(expr, expr->m_name);
@@ -205,7 +229,7 @@ Value Resolver::visit(expr::This *expr)
 {
     if (m_current_class == ClassType::NONE)
     {
-        ErrorHandler::get_instance().error(expr->m_keyword, "Can't use 'this' outside of a class.");
+        error(expr->m_keyword, "Can't use 'this' outside of a class.");
         return std::nullopt;
     }
 
@@ -214,13 +238,32 @@ Value Resolver::visit(expr::This *expr)
     return std::nullopt;
 }
 
+Value Resolver::visit(expr::Super *expr)
+{
+    if (m_current_class != ClassType::SUBCLASS)
+    {
+        error(expr->m_keyword, "Can't use 'super' when there is no super class.");
+        return std::nullopt;
+    }
 
+    resolve_local(expr, expr->m_keyword);
+
+    return std::nullopt;
+}
 
 void Resolver::resolve(const std::vector<StatementPtr> &stmts)
 {
     for (const auto &stmt : stmts)
     {
-        resolve(stmt.get());
+        try
+        {
+            resolve(stmt.get());
+        }
+        catch(RuntimeError& e)
+        {
+            error(e.m_op, e.m_msg);
+            break;
+        }
     }
 }
 
@@ -242,7 +285,7 @@ void Resolver::resolve_local(expr::Expression *expr, const Token &name)
     // because we need to start from the innermost scope and continue outwards.
     // if we don't find the variable we assume it's global
     std::for_each(m_scopes.rbegin(), m_scopes.rend(), [&](const auto &scope) -> void {
-        if (scope.contains(name.get_lexeme()))
+        if (scope.contains(name.lexeme()))
         {
             m_interpreter.lock()->resolve(expr, num_scopes);
             return;
@@ -289,13 +332,13 @@ void Resolver::declare(const Token &name)
         return;
 
     auto &scope = m_scopes.back();
-    if (scope.contains(name.get_lexeme()))
+    if (scope.contains(name.lexeme()))
     {
-        cpplox::ErrorHandler::get_instance().error(name, "Variable with this name is already declared in this scope.");
+        error(name, "Variable with this name is already declared in this scope.");
     }
 
     bool is_ready = false;
-    scope.emplace(name.get_lexeme(), is_ready);
+    scope.emplace(name.lexeme(), is_ready);
 }
 
 void Resolver::define(const Token &name)
@@ -305,7 +348,51 @@ void Resolver::define(const Token &name)
         return;
 
     bool is_ready = true;
-    m_scopes.back().at(name.get_lexeme()) = is_ready;
+    m_scopes.back().at(name.lexeme()) = is_ready;
+}
+
+void Resolver::import_module(const Token &name)
+{
+    // Cpplox does not allow importing the main script anywhere
+    if (name == m_filename)
+    {
+        throw RuntimeError{name, "Can't import the main script as it is not a module."};
+    }
+
+    if (is_imported(name.lexeme()))
+    {
+        error(name, "The module '" + name.lexeme() + "' was already imported.");
+        return;
+    }
+
+    for (const std::string &path : m_search_paths)
+    {
+        Scanner scanner;
+        auto tokens = scanner.run_file(path + "/" + name.lexeme() + ".cpplox");
+
+        Parser parser{tokens.value()};
+        std::optional<std::vector<StatementPtr>> statements = parser.parse();
+        // TODO: turn return codes into enums
+        if (ErrorHandler::get_instance().m_had_error)
+            std::exit(65);
+
+        // We store the modules' name here to prevent circular dependency that would
+        // make our interpreter crash
+        m_imported_modules.push_back(name.lexeme());
+
+        resolve(statements.value());
+        if (ErrorHandler::get_instance().m_had_error)
+            std::exit(65);
+
+        m_interpreter.lock()->add_statements(statements.value());
+
+        return;
+    }
+}
+
+bool Resolver::is_imported(const std::string &name)
+{
+    return std::find(m_imported_modules.begin(), m_imported_modules.end(), name) != m_imported_modules.end();
 }
 
 void Resolver::check_prefixes(stmt::Function *function, FunctionType type)
@@ -313,12 +400,22 @@ void Resolver::check_prefixes(stmt::Function *function, FunctionType type)
     // TODO: extend this method when you add new prefixes
     if (type == FunctionType::FUNCTION)
     {
-        for (const auto& prefix : function->m_prefix)
+        for (const auto &prefix : function->m_prefix)
         {
-            if (prefix.get_lexeme() == "static")
-                ErrorHandler::get_instance().error(prefix, "Only methods can be declared static.");
+            if (prefix.lexeme() == "static")
+                error(prefix, "Only methods can be declared static.");
         }
     }
+}
+
+void Resolver::error(const Token &name, const std::string& msg)
+{
+    ErrorHandler::get_instance().error(name, msg);
+}
+
+void Resolver::warning(const Token &name, const std::string &msg)
+{
+    ErrorHandler::get_instance().warning(name, msg);
 }
 
 }

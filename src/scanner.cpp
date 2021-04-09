@@ -26,7 +26,7 @@ std::optional<std::vector<Token>> Scanner::run_file(const std::string& filename)
     }
     catch (std::ifstream::failure& e)
     {
-        std::cout << "Error: failed to open script file - " << e.what() << '\n';
+        ErrorHandler::get_instance().error(1, 1, ' ', "", "Failed to open script file.");
         return std::nullopt;
     }
 }
@@ -317,7 +317,7 @@ std::optional<TokenType> Scanner::str_to_keyword(const std::string& str)
         {"if", TokenType::IF},       {"nil", TokenType::NIL},       {"or", TokenType::OR},
         {"print", TokenType::PRINT}, {"return", TokenType::RETURN}, {"super", TokenType::SUPER},
         {"this", TokenType::THIS},   {"true", TokenType::TRUE},     {"var", TokenType::VAR},
-        {"while", TokenType::WHILE}, {"static", TokenType::PREFIX}};
+        {"while", TokenType::WHILE}, {"static", TokenType::PREFIX}, {"import", TokenType::IMPORT}};
 
     if (keyword_lookup.contains(str))
     {

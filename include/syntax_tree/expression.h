@@ -25,6 +25,7 @@ class Lambda;
 class Get;
 class Set;
 class This;
+class Super;
 
 // Interface that represents an operation executed on the given expressions
 class Visitor
@@ -42,6 +43,7 @@ public:
     virtual Value visit(Get* expr) = 0;
     virtual Value visit(Set* expr) = 0;
     virtual Value visit(This* expr) = 0;
+    virtual Value visit(Super* expr) = 0;
 
 protected:
     virtual ~Visitor() = default;
@@ -273,6 +275,24 @@ public:
     }
 
     Token m_keyword;
+};
+
+class Super : public Expression
+{
+public:
+    Super(const Token& keyword, const Token& method)
+        : m_keyword(keyword)
+        , m_method(method)
+    {
+    }
+
+    Value accept(Visitor* visitor) override
+    {
+        return visitor->visit(this);
+    }
+
+    Token m_keyword;
+    Token m_method;
 };
 
 }

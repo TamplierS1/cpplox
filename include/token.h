@@ -8,6 +8,7 @@
 
 namespace cpplox
 {
+// When you add a new token, don't forget to update `Scanner::str_to_keyword()`
 enum class TokenType
 {
     // Single-character tokens.
@@ -58,6 +59,8 @@ enum class TokenType
 
     PREFIX,
 
+    IMPORT,
+
     cpplox_EOF
 };
 
@@ -75,27 +78,27 @@ public:
     {
     }
 
-    [[nodiscard]] inline TokenType get_token_type() const
+    [[nodiscard]] inline TokenType token_type() const
     {
         return m_token_type;
     }
-    [[nodiscard]] inline std::string get_lexeme() const
+    [[nodiscard]] inline std::string lexeme() const
     {
         return m_lexeme;
     }
-    [[nodiscard]] inline Value get_literal() const
+    [[nodiscard]] inline Value literal() const
     {
         return m_literal;
     }
-    [[nodiscard]] inline int get_line() const
+    [[nodiscard]] inline int line() const
     {
         return m_line;
     }
-    [[nodiscard]] inline std::string get_str_line() const
+    [[nodiscard]] inline std::string str_line() const
     {
         return m_str_line;
     }
-    [[nodiscard]] inline int get_column() const
+    [[nodiscard]] inline int column() const
     {
         return m_column;
     }

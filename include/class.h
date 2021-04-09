@@ -14,8 +14,9 @@ using MethodsMap = std::unordered_map<std::string, std::shared_ptr<Function>>;
 class Class : public Callable, public Instance
 {
 public:
-    Class(const std::string& name, const MethodsMap& methods)
+    Class(const std::string& name, const std::optional<std::shared_ptr<Class>>& superclass, const MethodsMap& methods)
         : m_name(name)
+        , m_super(superclass)
         , m_methods(methods)
     {
     }
@@ -33,7 +34,8 @@ public:
     Value get(const Token& name) override;
     void set(const Token& name, const Value& value) override;
 
-    std::string m_name;
+    const std::string m_name;
+    const std::optional<std::shared_ptr<Class>> m_super;
 
 private:
     // A bad idea and a violation of some OOP practises,
