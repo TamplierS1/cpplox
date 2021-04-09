@@ -14,18 +14,17 @@ const char* RuntimeError::what() const noexcept
 
 void ErrorHandler::error(const Token& token, const std::string& msg)
 {
-    std::string formatted_line = format_error(token);
+    std::string formatted_line = format_msg(token, fmt::color::red);
 
-    if (token.get_token_type() == TokenType::cpplox_EOF)
-        report(token.get_line(), token.get_column(), " at end", formatted_line, msg);
+    if (token.token_type() == TokenType::cpplox_EOF)
+        report_error(token.line(), token.column(), " at end", formatted_line, msg);
     else
-        report(token.get_line(), token.get_column(), token.get_lexeme(), formatted_line, msg);
+        report_error(token.line(), token.column(), token.lexeme(), formatted_line, msg);
 }
 
-void ErrorHandler::error(int line, int column, char character, const std::string& src_str,
-                         const std::string& msg)
+void ErrorHandler::error(int line, int column, char character, const std::string& src_str, const std::string& msg)
 {
-    report(line, column, std::string(1, character), src_str, msg);
+    report_error(line, column, std::string(1, character), src_str, msg);
 }
 
 void ErrorHandler::runtime_error(const RuntimeError& error)
@@ -47,27 +46,32 @@ void ErrorHandler::warning(const std::string& msg) const
     fmt::print(fmt::emphasis::italic | fg(fmt::color::yellow), " Warning: {}\n\n", msg);
 }
 
-std::string ErrorHandler::format_error(const Token& token)
+void ErrorHandler::warning(const Token& token, const std::string& msg) const
 {
-    std::string source_line = token.get_str_line();
+    std::string formatted_line = format_msg(token, fmt::color::yellow);
+    report_warning(token.line(), token.column(), token.lexeme(), formatted_line, msg);
+}
+
+std::string ErrorHandler::format_msg(const Token& token, fmt::color token_color) const
+{
+    std::string source_line = token.str_line();
 
     // I separated the line into multiple variables
     // because I wanted the token to be colored differently from the rest of the line
 
-    // TODO: make the error token different color from the rest of the line.
     // part of the line before the token that caused the error
-    int column = token.get_column();
+    int column = token.column();
     std::string before_token_line =
-        fmt::format(fg(fmt::color::dark_olive_green), "{}", source_line.substr(0, column - token.get_lexeme().size()));
-    std::string token_str = fmt::format(fg(fmt::color::red), "{}", token.get_lexeme());
-    std::string after_token_line = fmt::format(fg(fmt::color::dark_olive_green), "{}", source_line.substr(column,
-                                               source_line.size() - column));
+        fmt::format(fg(fmt::color::dark_olive_green), "{}", source_line.substr(0, column - token.lexeme().size()));
+    std::string token_str = fmt::format(fg(token_color), "{}", token.lexeme());
+    std::string after_token_line =
+        fmt::format(fg(fmt::color::dark_olive_green), "{}", source_line.substr(column, source_line.size() - column));
 
     return before_token_line + token_str + after_token_line;
 }
 
-void ErrorHandler::report(int line, int column, const std::string& where, const std::string& src_str,
-                          const std::string& msg)
+void ErrorHandler::report_error(int line, int column, const std::string& where, const std::string& src_str,
+                                const std::string& msg)
 {
     fmt::print("\n[{}, {}]", line, column);
     fmt::print(fmt::emphasis::italic | fg(fmt::color::red), " Error at '");
@@ -77,5 +81,14 @@ void ErrorHandler::report(int line, int column, const std::string& where, const 
     m_had_error = true;
 }
 
+void ErrorHandler::report_warning(int line, int column, const std::string& where, const std::string& src_str,
+                                  const std::string& msg) const
+{
+    fmt::print("\n[{}, {}]", line, column);
+    fmt::print(fmt::emphasis::italic | fg(fmt::color::yellow), " Warning at '");
+    fmt::print(fmt::emphasis::bold | fg(fmt::color::white), "{}", where);
+    fmt::print(fmt::emphasis::italic | fg(fmt::color::yellow), "': {}\n\n", msg);
+    fmt::print(fg(fmt::color::dark_olive_green), "\t{}\n\n", src_str);
+}
 
 }

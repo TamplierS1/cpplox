@@ -4,16 +4,11 @@
 
 namespace cpplox
 {
-Interpreter::Interpreter()
-{
-    register_native_funcs();
-}
-
-void Interpreter::interpret(std::vector<StatementPtr> &stmts)
+void Interpreter::interpret()
 {
     try
     {
-        for (auto &stmt : stmts)
+        for (auto &stmt : m_to_interpret)
         {
             execute(stmt.get());
         }
@@ -22,6 +17,13 @@ void Interpreter::interpret(std::vector<StatementPtr> &stmts)
     {
         ErrorHandler::get_instance().runtime_error(e);
     }
+}
+
+void Interpreter::add_statements(const std::vector<StatementPtr> &new_statements)
+{
+    std::for_each(new_statements.rbegin(), new_statements.rend(), [&](const auto& stmt) -> void {
+        m_to_interpret.push_front(stmt);
+    });
 }
 
 Value Interpreter::visit(expr::Literal *expr)
@@ -38,7 +40,7 @@ Value Interpreter::visit(expr::Unary *expr)
 {
     Value right = evaluate(expr->m_right.get());
 
-    switch (expr->m_op.get_token_type())
+    switch (expr->m_op.token_type())
     {
         case TokenType::MINUS:
             check_number_operands(expr->m_op, right);
@@ -67,7 +69,7 @@ Value Interpreter::visit(expr::Binary *expr)
         is_numbers = true;
     }
 
-    switch (expr->m_op.get_token_type())
+    switch (expr->m_op.token_type())
     {
             /* Arithmetic */
         case TokenType::MINUS:
@@ -137,7 +139,7 @@ Value Interpreter::visit(expr::Logical *expr)
 {
     Value left = evaluate(expr->m_left.get());
 
-    if (expr->m_op.get_token_type() == TokenType::OR)
+    if (expr->m_op.token_type() == TokenType::OR)
     {
         if (is_true(left))
             return left;
@@ -239,6 +241,20 @@ Value Interpreter::visit(expr::This *expr)
     return lookup_variable(expr->m_keyword, expr);
 }
 
+Value Interpreter::visit(expr::Super *expr)
+{
+    int distance = m_locals.at(expr);
+    auto binding = m_env->get_at(distance, "super").m_value.value();
+    auto superclass = std::dynamic_pointer_cast<Class>(std::get<std::shared_ptr<Callable>>(binding));
+    auto object = std::get<std::shared_ptr<Instance>>(m_env->get_at(distance - 1, "this").m_value.value());
+
+    std::optional<std::shared_ptr<Function>> method = superclass->find_method(expr->m_method.lexeme());
+    if (!method.has_value())
+        throw RuntimeError{expr->m_method, "Undefined property '" + expr->m_method.lexeme() + "'."};
+
+    return std::dynamic_pointer_cast<Callable>(method.value()->bind(object));
+}
+
 void Interpreter::visit(stmt::Expression *stmt)
 {
     evaluate(stmt->m_expr.get());
@@ -259,7 +275,7 @@ void Interpreter::visit(stmt::Var *stmt)
         value = evaluate(stmt->m_initializer->get());
     }
 
-    m_env->define(stmt->m_name.get_lexeme(), value);
+    m_env->define(stmt->m_name.lexeme(), value);
 }
 
 void Interpreter::visit(stmt::Block *stmt)
@@ -295,7 +311,7 @@ void Interpreter::visit(stmt::Function *stmt)
 {
     auto statement = std::make_shared<stmt::Function>(*stmt);
     auto function = std::make_shared<Function>(statement, m_env);
-    m_env->define(stmt->m_name.get_lexeme(), std::dynamic_pointer_cast<Callable>(function));
+    m_env->define(stmt->m_name.lexeme(), std::dynamic_pointer_cast<Callable>(function));
 }
 
 void Interpreter::visit(stmt::Return *stmt)
@@ -311,22 +327,54 @@ void Interpreter::visit(stmt::Return *stmt)
 
 void Interpreter::visit(stmt::Class *stmt)
 {
-    m_env->define(stmt->m_name.get_lexeme(), std::nullopt);
+    Value superclass_value = std::nullopt;
+    std::optional<std::shared_ptr<Class>> superclass = std::nullopt;
+    bool super_exists = stmt->m_super.has_value();
+
+    if (super_exists)
+    {
+        superclass_value = evaluate(stmt->m_super->get());
+        if (superclass_value.m_value.has_value())
+        {
+            superclass =
+                std::dynamic_pointer_cast<Class>(std::get<std::shared_ptr<Callable>>(superclass_value.m_value.value()));
+            if (superclass == nullptr)
+            {
+                throw RuntimeError{stmt->m_super.value()->m_name, "Superclass must be a class."};
+            }
+        }
+    }
+
+    m_env->define(stmt->m_name.lexeme(), std::nullopt);
+
+    if (super_exists)
+    {
+        m_env = std::make_shared<Environment>(m_env);
+        m_env->define("super", superclass_value);
+    }
 
     std::unordered_map<std::string, std::shared_ptr<Function>> methods;
     for (const auto &method : stmt->m_methods)
     {
-        bool is_initializer = method->m_name.get_lexeme() == "init";
+        bool is_initializer = method->m_name.lexeme() == "init";
         bool is_static =
             std::find(method->m_prefix.begin(), method->m_prefix.end(), "static") != method->m_prefix.end();
 
         auto function = std::make_shared<Function>(method, m_env, is_initializer, is_static);
-        methods.emplace(method->m_name.get_lexeme(), function);
+        methods.emplace(method->m_name.lexeme(), function);
     }
 
-    auto klass = std::make_shared<Class>(stmt->m_name.get_lexeme(), methods);
+    auto klass = std::make_shared<Class>(stmt->m_name.lexeme(), superclass, methods);
+
+    if (super_exists)
+        m_env = m_env->m_enclosing;
 
     m_env->assign(stmt->m_name, std::dynamic_pointer_cast<Callable>(klass));
+}
+
+void Interpreter::visit(stmt::Import *stmt)
+{
+
 }
 
 void Interpreter::execute_block(const std::vector<StatementPtr> &statements, const std::shared_ptr<Environment> &env)
@@ -378,7 +426,7 @@ Value Interpreter::lookup_variable(const Token &name, expr::Expression *expr)
 
     Value val = std::nullopt;
     if (distance != m_locals.end())
-        val = m_env->get_at(distance->second, name.get_lexeme());
+        val = m_env->get_at(distance->second, name.lexeme());
     else
         val = m_globals->get(name);
 
@@ -390,7 +438,7 @@ void Interpreter::check_null(const Value &value, const Token &name)
 {
     // report a runtime error if the variable is uninitialized
     if (!value.m_value.has_value())
-        throw RuntimeError{name, "Variable '" + name.get_lexeme() + "' is uninitialized."};
+        throw RuntimeError{name, "Variable '" + name.lexeme() + "' is uninitialized."};
 }
 
 void Interpreter::register_native_funcs()

@@ -12,7 +12,7 @@ void Environment::define(const std::string &name, const Value &val)
 
 Value Environment::get(const Token &name) const
 {
-    auto element = m_values.find(name.get_lexeme());
+    auto element = m_values.find(name.lexeme());
     if (element != m_values.end())
         return element->second;
 
@@ -20,7 +20,7 @@ Value Environment::get(const Token &name) const
     if (m_enclosing != nullptr)
         return m_enclosing->get(name);
 
-    throw RuntimeError{name, "Undefined variable '" + name.get_lexeme() + "'."};
+    throw RuntimeError{name, "Undefined variable '" + name.lexeme() + "'."};
 }
 
 Value Environment::get_at(int distance, const std::string &name)
@@ -30,7 +30,7 @@ Value Environment::get_at(int distance, const std::string &name)
 
 void Environment::assign(const Token &name, const Value &val)
 {
-    auto variable = m_values.find(name.get_lexeme());
+    auto variable = m_values.find(name.lexeme());
     if (variable != m_values.end())
     {
         variable->second = val;
@@ -44,12 +44,12 @@ void Environment::assign(const Token &name, const Value &val)
         return;
     }
 
-    throw RuntimeError{name, "Undefined variable '" + name.get_lexeme() + "'."};
+    throw RuntimeError{name, "Undefined variable '" + name.lexeme() + "'."};
 }
 
 void Environment::assign_at(int distance, const Token &name, const Value &val)
 {
-    ancestor(distance)->m_values.emplace(name.get_lexeme(), val);
+    ancestor(distance)->m_values.emplace(name.lexeme(), val);
 }
 
 std::shared_ptr<Environment> Environment::ancestor(int distance) const

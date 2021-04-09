@@ -58,6 +58,7 @@ private:
     StatementPtr while_statement();
     StatementPtr for_statement();
     StatementPtr return_statement();
+    StatementPtr import();
 
     /*
      * Utility functions
