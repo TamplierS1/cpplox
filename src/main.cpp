@@ -58,6 +58,7 @@ int run_script(const std::string& filename)
 
 std::string take_module_name(const std::string& str)
 {
+    // TODO: it does not work. Fix.
     bool dot_found = false;
     bool slash_found = false;
 

@@ -201,9 +201,9 @@ ExpressionPtr Parser::call()
 ExpressionPtr Parser::primary()
 {
     if (match({TokenType::FALSE}))
-        return std::make_shared<expr::Literal>(false);
+        return std::make_shared<expr::Literal>(static_cast<Value>(false));
     if (match({TokenType::TRUE}))
-        return std::make_shared<expr::Literal>(true);
+        return std::make_shared<expr::Literal>(static_cast<Value>(true));
     if (match({TokenType::NIL}))
         return std::make_shared<expr::Literal>(std::nullopt);
 
@@ -244,9 +244,6 @@ ExpressionPtr Parser::primary()
         return std::make_shared<expr::Grouping>(mid_expr);
     }
 
-    /* TODO: I think throwing an exception to unwind wasn't the best idea.
-     *  Come up with something else
-     */
     // Failed to find any rule to parse the token
     throw error(peek(), "Expect expression.");
 }
@@ -441,7 +438,7 @@ StatementPtr Parser::for_statement()
     consume(TokenType::SEMICOLON, "Expect ';' after for-loop condition.");
 
     std::optional<ExpressionPtr> increment = std::nullopt;
-    if (!check(TokenType::SEMICOLON))
+    if (!check(TokenType::RIGHT_PAREN))
         increment = expression();
     consume(TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
 
@@ -452,19 +449,20 @@ StatementPtr Parser::for_statement()
     if (increment.has_value())
     {
         // we just add the increment expression to the end of the for loop body
-        std::vector<StatementPtr> stmts{body, std::make_shared<stmt::Expression>(*increment)};
-        body = std::make_shared<stmt::Block>(stmts);
+        std::vector<StatementPtr> stmts{body, std::make_shared<stmt::Expression>(increment.value())};
+        body = std::make_shared<stmt::Block>(std::move(stmts));
     }
 
     // if the condition wasn't provided, it is always true
     if (!condition.has_value())
-        condition = std::make_shared<expr::Literal>(true);
-    body = std::make_shared<stmt::While>(*condition, body);
+        condition = std::make_shared<expr::Literal>(static_cast<Value>(true));
+
+    body = std::make_shared<stmt::While>(condition.value(), body);
 
     if (initializer.has_value())
     {
-        std::vector<StatementPtr> stmts{*initializer, body};
-        body = std::make_shared<stmt::Block>(stmts);
+        std::vector<StatementPtr> stmts{initializer.value(), body};
+        body = std::make_shared<stmt::Block>(std::move(stmts));
     }
 
     return body;
