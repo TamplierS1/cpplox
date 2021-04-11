@@ -1,0 +1,9 @@
+
+println(nil); // nil
+
+println(nil == nil); // true
+
+println(nil == "captain"); // false
+
+var x = nil;
+println(x != nil); // false

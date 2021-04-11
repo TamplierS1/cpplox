@@ -1,0 +1,9 @@
+
+var x = 0;
+println(x); // 0
+
+// Braces represent scope
+{
+    var x = 1; // this x shadows the outer one
+    println(x); // 1
+}

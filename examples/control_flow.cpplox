@@ -1,0 +1,23 @@
+
+var user_input = "Mary";
+
+while (user_input != nil)
+{
+    if (user_input == "Mary")
+    {
+        println("That's Mary.");
+        user_input = nil;
+    } // There is no "else if" for now. I'll add it later.
+    else
+        if (user_input = "Peter")
+            println("That's Peter");
+}
+
+for (var i = 0; i <= 10; i = i + 1)
+{
+    print i;
+}
+
+// Output: That's Mary.
+            012345678910
+

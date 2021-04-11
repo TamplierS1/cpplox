@@ -1,0 +1,15 @@
+
+// In cpplox only 'nil' and 'false' are falsey. Everything else is truthy.
+
+println(17 + 1 == 18); // true
+
+println(!true); // false
+
+println(false); // false
+
+println(true and "hey" == "hey"); // true
+
+// Notice how '10' is printed here, not 'true'.
+println(false or 10); // 10
+
+println("cake" == "not a cake"); // false

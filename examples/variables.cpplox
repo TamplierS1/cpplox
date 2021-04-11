@@ -1,0 +1,13 @@
+
+var x = 0; // cpplox is dynamicly-typed
+println(x); // 0
+
+x = "hey";
+println(x); // hey
+
+// Variables must start either with '_' or with a letter,
+// after that any alphanumeric combination (including '_') is allowed
+var pope_the_First = false;
+
+var z; // Variables can be uninitialized if you don't use them
+println(z); // But when you do use them, an error occurs

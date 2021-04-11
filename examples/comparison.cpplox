@@ -1,0 +1,5 @@
+
+println(1 <= 5); // true
+println(1.6 > 0.134); // true
+println(10 >= 10); // true
+println("cake is a lie" >= "2007"); // error, only numbers can be compared
