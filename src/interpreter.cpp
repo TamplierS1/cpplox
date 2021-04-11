@@ -21,7 +21,7 @@ void Interpreter::interpret()
 
 void Interpreter::add_statements(const std::vector<StatementPtr> &new_statements)
 {
-    std::for_each(new_statements.rbegin(), new_statements.rend(), [&](const auto& stmt) -> void {
+    std::for_each(new_statements.rbegin(), new_statements.rend(), [&](const auto &stmt) -> void {
         m_to_interpret.push_front(stmt);
     });
 }
@@ -45,9 +45,9 @@ Value Interpreter::visit(expr::Unary *expr)
         case TokenType::MINUS:
             check_number_operands(expr->m_op, right);
             // a unary minus can only be applied to numbers and that's why we convert the expression to double
-            return -std::get<double>(right.m_value.value());
+            return static_cast<Value>(-std::get<double>(right.m_value.value()));
         case TokenType::BANG:
-            return !is_true(right);
+            return static_cast<Value>(!is_true(right));
     }
 
     return std::nullopt;
@@ -58,15 +58,21 @@ Value Interpreter::visit(expr::Binary *expr)
     Value left = evaluate(expr->m_left.get());
     Value right = evaluate(expr->m_right.get());
 
+    bool has_value = left.m_value.has_value() && right.m_value.has_value();
+
     // extract the values beforehand to avoid repetition
     double dleft = 0, dright = 0;
     bool is_numbers = false;
     // numbers
-    if (std::holds_alternative<double>(left.m_value.value()) && std::holds_alternative<double>(right.m_value.value()))
+    if (has_value)
     {
-        dleft = std::get<double>(left.m_value.value());
-        dright = std::get<double>(right.m_value.value());
-        is_numbers = true;
+        if (std::holds_alternative<double>(left.m_value.value()) &&
+            std::holds_alternative<double>(right.m_value.value()))
+        {
+            dleft = std::get<double>(left.m_value.value());
+            dright = std::get<double>(right.m_value.value());
+            is_numbers = true;
+        }
     }
 
     switch (expr->m_op.token_type())
@@ -74,10 +80,13 @@ Value Interpreter::visit(expr::Binary *expr)
             /* Arithmetic */
         case TokenType::MINUS:
             check_number_operands(expr->m_op, left, right);
-            return dleft - dright;
+            return static_cast<Value>(dleft - dright);
         case TokenType::PLUS:
             if (is_numbers)
-                return dleft + dright;
+                return static_cast<Value>(dleft + dright);
+
+            if (!has_value)
+                break;
 
             if (std::holds_alternative<std::string>(left.m_value.value()) ||
                 std::holds_alternative<std::string>(right.m_value.value()))
@@ -89,27 +98,27 @@ Value Interpreter::visit(expr::Binary *expr)
             check_number_operands(expr->m_op, left, right);
             if (dright == 0)
                 throw RuntimeError{expr->m_op, "Cannot divide by zero."};
-            return dleft / dright;
+            return static_cast<Value>(dleft / dright);
         case TokenType::STAR:
             check_number_operands(expr->m_op, left, right);
-            return dleft * dright;
+            return static_cast<Value>(dleft * dright);
             /* Comparison */
         case TokenType::GREATER:
             check_number_operands(expr->m_op, left, right);
-            return dleft > dright;
+            return static_cast<Value>(dleft > dright);
         case TokenType::GREATER_EQUAL:
             check_number_operands(expr->m_op, left, right);
-            return dleft >= dright;
+            return static_cast<Value>(dleft >= dright);
         case TokenType::LESS:
             check_number_operands(expr->m_op, left, right);
-            return dleft < dright;
+            return static_cast<Value>(dleft < dright);
         case TokenType::LESS_EQUAL:
             check_number_operands(expr->m_op, left, right);
-            return dleft <= dright;
+            return static_cast<Value>(dleft <= dright);
         case TokenType::BANG_EQUAL:
-            return !is_equal(left, right);
+            return static_cast<Value>(!is_equal(left, right));
         case TokenType::EQUAL_EQUAL:
-            return is_equal(left, right);
+            return static_cast<Value>(is_equal(left, right));
     }
 
     return std::nullopt;
@@ -131,6 +140,8 @@ Value Interpreter::visit(expr::Assign *expr)
     }
     else
         m_globals->assign(expr->m_name, val);
+
+    m_env->assign(expr->m_name, val);
 
     return val;
 }
@@ -374,7 +385,8 @@ void Interpreter::visit(stmt::Class *stmt)
 
 void Interpreter::visit(stmt::Import *stmt)
 {
-
+    // There is nothing to interpret.
+    // The resolver already did all the work for us.
 }
 
 void Interpreter::execute_block(const std::vector<StatementPtr> &statements, const std::shared_ptr<Environment> &env)
@@ -430,7 +442,7 @@ Value Interpreter::lookup_variable(const Token &name, expr::Expression *expr)
     else
         val = m_globals->get(name);
 
-    check_null(val, name);
+    // check_null(val, name);
     return val;
 }
 
@@ -470,9 +482,9 @@ bool Interpreter::is_equal(const Value &val1, const Value &val2)
 {
     // if both values are `nil` they are equal
     // useful when checking if the value is null
-    if (val1.m_value == std::nullopt && val2.m_value == std::nullopt)
+    if (!val1.m_value.has_value() && !val2.m_value.has_value())
         return true;
-    if (val1.m_value == std::nullopt)
+    if (!val1.m_value.has_value() || !val2.m_value.has_value())
         return false;
 
     return val1.m_value.value() == val2.m_value.value();

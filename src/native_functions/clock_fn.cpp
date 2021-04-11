@@ -7,7 +7,7 @@ Value ClockFunction::call(Interpreter *interpreter, const std::vector<Value>& ar
     using namespace std::chrono;
     auto now_ms = time_point_cast<milliseconds>(system_clock::now());
     auto value = now_ms.time_since_epoch();
-    return static_cast<double>(value.count());
+    return static_cast<Value>(static_cast<double>(value.count()));
 }
 
 int ClockFunction::arity() const

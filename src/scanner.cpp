@@ -190,12 +190,12 @@ void Scanner::number()
     }
 
     double value = std::stod(m_source.substr(m_start, m_current - m_start));
-    add_token(TokenType::NUMBER, value);
+    add_token(TokenType::NUMBER, static_cast<Value>(value));
 }
 
 void Scanner::identifier()
 {
-    while (std::isalnum(peek()))
+    while (std::isalnum(peek()) || peek() == '_')
         advance();
 
     std::string lexeme = m_source.substr(m_start, m_current - m_start);

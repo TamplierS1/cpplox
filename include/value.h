@@ -18,7 +18,7 @@ using Val =
 class Value
 {
 public:
-    // don't make constructors explicit - we need implicit conversion (except for bools)
+    // don't make constructors explicit - we need implicit conversion (except for bools and doubles)
     Value(std::nullopt_t)
         : m_value(std::nullopt)
     {
@@ -27,7 +27,7 @@ public:
         : m_value(value)
     {
     }
-    Value(const double& value)
+    explicit Value(const double& value)
         : m_value(value)
     {
     }

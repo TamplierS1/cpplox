@@ -118,13 +118,13 @@ void Resolver::visit(stmt::Import *stmt)
 
 Value Resolver::visit(expr::Variable *expr)
 {
-    if (m_scopes.empty())
-        return std::nullopt;
-
-    auto is_ready = m_scopes.back().find(expr->m_name.lexeme());
-    if (is_ready != m_scopes.back().end() && !is_ready->second)
+    if (!m_scopes.empty())
     {
-        error(expr->m_name, "Can't read local variable in its own initializer.");
+        auto is_ready = m_scopes.back().find(expr->m_name.lexeme());
+        if (is_ready != m_scopes.back().end() && !is_ready->second)
+        {
+            error(expr->m_name, "Can't read local variable in its own initializer.");
+        }
     }
 
     resolve_local(expr, expr->m_name);

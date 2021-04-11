@@ -6,10 +6,10 @@
 
 #include "error_handler.h"
 #include "interpreter.h"
-#include "syntax_tree/expression.h"
-#include "syntax_tree/statement.h"
 #include "parser.h"
 #include "scanner.h"
+#include "syntax_tree/expression.h"
+#include "syntax_tree/statement.h"
 
 namespace cpplox
 {
@@ -19,7 +19,7 @@ using namespace ast;
 // bools indicate whether we have finished resolving the variable's initializer
 using Scope = std::unordered_map<std::string, bool>;
 
-// Resolves variable bindings (except global variables)
+// Resolves variable bindings (except global variables) and imports
 class Resolver : public stmt::Visitor, expr::Visitor
 {
     // Used to determine whether we're in a function or a method
@@ -41,7 +41,8 @@ class Resolver : public stmt::Visitor, expr::Visitor
     };
 
 public:
-    explicit Resolver(const std::shared_ptr<Interpreter>& interpreter, const std::string& filename, const std::vector<std::string>& search_paths)
+    Resolver(const std::shared_ptr<Interpreter>& interpreter, const std::string& filename,
+                      const std::vector<std::string>& search_paths)
         : m_interpreter(interpreter)
         , m_search_paths(search_paths)
         , m_filename(filename)

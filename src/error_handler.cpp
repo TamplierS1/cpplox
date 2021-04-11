@@ -61,11 +61,24 @@ std::string ErrorHandler::format_msg(const Token& token, fmt::color token_color)
 
     // part of the line before the token that caused the error
     int column = token.column();
-    std::string before_token_line =
-        fmt::format(fg(fmt::color::dark_olive_green), "{}", source_line.substr(0, column - token.lexeme().size()));
     std::string token_str = fmt::format(fg(token_color), "{}", token.lexeme());
-    std::string after_token_line =
-        fmt::format(fg(fmt::color::dark_olive_green), "{}", source_line.substr(column, source_line.size() - column));
+    std::string before_token_line;
+    std::string after_token_line;
+    // Handle tokens like `>=` that are 2 characters wide
+    if (token.lexeme().size() == 2)
+    {
+        before_token_line = fmt::format(fg(fmt::color::dark_olive_green), "{}",
+                                        source_line.substr(0, column - token.lexeme().size() + 1));
+        after_token_line = fmt::format(fg(fmt::color::dark_olive_green), "{}",
+                                       source_line.substr(column + 1, source_line.size() - column));
+    }
+    else
+    {
+        before_token_line =
+            fmt::format(fg(fmt::color::dark_olive_green), "{}", source_line.substr(0, column - token.lexeme().size()));
+        after_token_line = fmt::format(fg(fmt::color::dark_olive_green), "{}",
+                                       source_line.substr(column, source_line.size() - column));
+    }
 
     return before_token_line + token_str + after_token_line;
 }
