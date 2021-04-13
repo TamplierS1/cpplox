@@ -1,0 +1,16 @@
+
+class Person
+{
+    // The constructor is always called 'init',
+    // and you can only have one constructor
+    init(name, age)
+    {
+        this.name = name;
+        this.age = age;
+    }
+}
+
+var detective = Person("Harry", 44);
+
+println(detective.name);
+println(detective.age);

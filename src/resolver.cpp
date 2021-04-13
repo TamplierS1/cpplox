@@ -259,7 +259,7 @@ void Resolver::resolve(const std::vector<StatementPtr> &stmts)
         {
             resolve(stmt.get());
         }
-        catch(RuntimeError& e)
+        catch (RuntimeError &e)
         {
             error(e.m_op, e.m_msg);
             break;
@@ -365,29 +365,46 @@ void Resolver::import_module(const Token &name)
         return;
     }
 
+    std::string module_path;
+    bool found_module = false;
     for (const std::string &path : m_search_paths)
     {
-        Scanner scanner;
-        auto tokens = scanner.run_file(path + "/" + name.lexeme() + ".cpplox");
+        std::ifstream file{path + "/" + name.lexeme() + ".cpplox"};
+        if (file.is_open())
+        {
+            module_path = path;
+            found_module = true;
+        }
+        file.close();
+    }
 
-        Parser parser{tokens.value()};
-        std::optional<std::vector<StatementPtr>> statements = parser.parse();
-        // TODO: turn return codes into enums
-        if (ErrorHandler::get_instance().m_had_error)
-            std::exit(65);
-
-        // We store the modules' name here to prevent circular dependency that would
-        // make our interpreter crash
-        m_imported_modules.push_back(name.lexeme());
-
-        resolve(statements.value());
-        if (ErrorHandler::get_instance().m_had_error)
-            std::exit(65);
-
-        m_interpreter.lock()->add_statements(statements.value());
-
+    if (!found_module)
+    {
+        error(name, "Failed to find the module " + name.lexeme() + ".");
         return;
     }
+
+    Scanner scanner;
+    auto tokens = scanner.run_file(module_path + "/" + name.lexeme() + ".cpplox");
+
+    if (!tokens.has_value())
+        return;
+
+    Parser parser{tokens.value()};
+    std::optional<std::vector<StatementPtr>> statements = parser.parse();
+    // TODO: turn return codes into enums
+    if (ErrorHandler::get_instance().m_had_error)
+        std::exit(65);
+
+    // We store the modules' name here to prevent circular dependency that would
+    // make our interpreter crash
+    m_imported_modules.push_back(name.lexeme());
+
+    resolve(statements.value());
+    if (ErrorHandler::get_instance().m_had_error)
+        std::exit(65);
+
+    m_interpreter.lock()->add_statements(statements.value());
 }
 
 bool Resolver::is_imported(const std::string &name)
@@ -408,7 +425,7 @@ void Resolver::check_prefixes(stmt::Function *function, FunctionType type)
     }
 }
 
-void Resolver::error(const Token &name, const std::string& msg)
+void Resolver::error(const Token &name, const std::string &msg)
 {
     ErrorHandler::get_instance().error(name, msg);
 }

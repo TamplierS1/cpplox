@@ -1,0 +1,20 @@
+
+fun sum(x, y)
+{
+    return x + y;
+}
+
+fun call(func, arg1, arg2)
+{
+    if (func != nil)
+        return func(arg1, arg2);
+    else
+        return; // nil is returned here
+}
+
+println(sum(10, 5)); // 15
+
+// In cpplox functions are first-class citizens
+var sum_function = sum;
+println(call(sum_function, 7, 3)); // 10
+println(call(nil, 10, 1)); // nil

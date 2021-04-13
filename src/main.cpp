@@ -6,7 +6,7 @@
 
 using namespace cpplox;
 
-int run_script(const std::string& filename);
+int run_script(const std::string& filename, const std::vector<std::string>& modules_dirs);
 // Deletes everything after the dot - 'test.cpplox' becomes 'test'
 std::string take_module_name(const std::string& str);
 int print_help();
@@ -14,16 +14,22 @@ int print_help();
 int main(int argc, char** argv)
 {
     std::string filename = argv[1];
+    std::vector<std::string> dirs;
 
-    if (argc == 2)
+    for (int i = 2; i < argc; i++)
     {
-        return run_script(filename);
+        dirs.emplace_back(argv[i]);
+    }
+
+    if (argc >= 2)
+    {
+        return run_script(filename, dirs);
     }
     else
         return print_help();
 }
 
-int run_script(const std::string& filename)
+int run_script(const std::string& filename, const std::vector<std::string>& modules_dirs)
 {
     Scanner scanner;
 
@@ -45,7 +51,7 @@ int run_script(const std::string& filename)
 
     auto interpreter = std::make_shared<Interpreter>(stmts_deque);
 
-    Resolver resolver{interpreter, take_module_name(filename), {"test_scripts"}};
+    Resolver resolver{interpreter, take_module_name(filename), modules_dirs};
     resolver.resolve(statements.value());
 
     if (ErrorHandler::get_instance().m_had_error)

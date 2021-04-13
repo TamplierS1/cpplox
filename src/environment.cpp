@@ -49,7 +49,7 @@ void Environment::assign(const Token &name, const Value &val)
 
 void Environment::assign_at(int distance, const Token &name, const Value &val)
 {
-    ancestor(distance)->m_values.emplace(name.lexeme(), val);
+    ancestor(distance)->m_values.at(name.lexeme()) = val;
 }
 
 std::shared_ptr<Environment> Environment::ancestor(int distance) const

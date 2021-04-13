@@ -1,0 +1,20 @@
+
+fun call_this(callback)
+{
+    return callback();
+}
+
+println(call_this(fun () {
+    return "Harry Du Bois";
+    })); // Harry Du Bois
+
+fun call_with_args(callback)
+{
+    return callback(10, 7);
+}
+
+// Lambdas can also take arguments
+var lambda = fun (x, y) {
+                 return x + y;
+             };
+println(call_with_args(lambda)); // 17
