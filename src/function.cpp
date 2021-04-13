@@ -27,6 +27,7 @@ Value Function::call(Interpreter *interpreter, const std::vector<Value> &args)
         return return_value.m_value;
     }
 
+    // No return statement
     if (m_is_initializer)
         return m_closure->get_at(0, "this");
 

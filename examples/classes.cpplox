@@ -1,0 +1,25 @@
+
+class File
+{
+    read()
+    {
+        return "pretend to read from a file";
+    }
+}
+
+var handle = File();
+println(handle.read());
+
+// You can define new methods and fields on instances at runtime
+handle.filename = "Revachol";
+
+println(handle.filename);
+
+handle.write = fun (filename) {
+    // You can concatenate strings by the way.
+    // And if one of the operands is a string,
+    // the other one is converted to a string.
+    print "successfully written to " + filename;
+};
+
+handle.write("Martinese");

@@ -1,0 +1,7 @@
+
+fun sum(x, y)
+{
+    return x + y;
+}
+
+var name = "modules1.cpplox";

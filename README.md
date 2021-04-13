@@ -43,6 +43,22 @@ Currently the following features are supported in `cpplox`:
 - Modules
 - Error formatting
 
+## Usage
+
+Basic usage:  
+
+`cpplox script.cpplox`
+
+If you want to use modules you need to specify the directory in which you want the interpreter to look for them:  
+
+`cpplox script.cpplox dir1 dir2`
+
 ## Examples
 
 You can find examples in the [examples](./examples) folder.
+
+## Known bugs
+
+There is currently a major bug with inheritance. For some reason when you try to assign to classes's fields  
+nothing happens. Although, it does work in a constructor. See [the example](./examples/inheritance.cpplox).
+

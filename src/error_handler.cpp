@@ -17,7 +17,7 @@ void ErrorHandler::error(const Token& token, const std::string& msg)
     std::string formatted_line = format_msg(token, fmt::color::red);
 
     if (token.token_type() == TokenType::cpplox_EOF)
-        report_error(token.line(), token.column(), " at end", formatted_line, msg);
+        report_error(token.line(), token.column(), "at end", formatted_line, msg);
     else
         report_error(token.line(), token.column(), token.lexeme(), formatted_line, msg);
 }

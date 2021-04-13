@@ -1,0 +1,16 @@
+// Modules are simple .cpplox files that you can import to reuse code.
+// You can't however import the main script into some other module.
+// Circular dependency results in an error, saying that you already imported the module.
+// You also need to pass the directories in which you want the
+// interpreter to look for modules.
+// Example: build/cpplox examples/modules.cpplox examples <-- this is the directory to look in
+
+import modules1;
+import test;
+
+// When you import a module you gain full access to all its code:
+// variables, classes, functions, etc.
+
+println(sum(1, 3)); // 4
+print name; // modules1.cpplox
+hey();

@@ -1,0 +1,36 @@
+
+class Entity
+{
+    init(name, health, dmg)
+    {
+        this.name = name;
+        this.health = health;
+        this.dmg = dmg;
+    }
+
+    attack()
+    {
+        println(this.name + " hits you for " + this.dmg + " damage!");
+    }
+}
+
+class Orc < Entity
+{
+    attack()
+    {
+        println(this.name + " rips your head off for " + this.dmg + " damage!");
+    }
+
+    rage()
+    {
+        println(this.name + "'s damage is doubled!");
+        // There's a bug -
+        // this line doesn't assign to this.dmg for some reason
+        // and I have no idea why
+        this.dmg = this.dmg * 2;
+    }
+}
+
+var big_orc = Orc("Bazdun Urh-Vonai", 1000, 3333);
+big_orc.rage();
+big_orc.attack();

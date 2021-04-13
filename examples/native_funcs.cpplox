@@ -1,0 +1,13 @@
+// You can write functions in c++ and make them available in cpplox.
+// First, you need to implement the Callable class.
+// include/native_functions/clock_fn.h is an example of that.
+// Then, you must create a fuction object of the type you just created.
+// Go to Interpreter::register_native_functions() and follow the example there.
+
+// These are some of the examples of available native functions:
+
+// Prints a line and adds '\n' at the end
+println("Hello world"); // Hello world
+
+// Returns the time passed since epoch
+println(clock());

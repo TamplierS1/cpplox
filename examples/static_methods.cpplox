@@ -1,0 +1,34 @@
+
+class Math
+{
+    static pow(number, power)
+    {
+        // Static methods are not allowed to call themselves.
+        // This line will cause the interpreter to crash.
+        // return number * Math.pow(number, power - 1);
+        var result = number;
+
+        while (power > 1)
+        {
+            // This is also not allowed.
+            // result = this.multiply(result, result);
+            // However, you can call other static methods from a static method
+            result = Math.static_multiply(result, result);
+            power = power - 1;
+        }
+
+        return result;
+    }
+
+    multiply(x, y)
+    {
+        return x * y;
+    }
+
+    static static_multiply(x, y)
+    {
+        return x * y;
+    }
+}
+
+print Math.pow(2, 2);

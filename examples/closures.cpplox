@@ -1,0 +1,16 @@
+
+fun outer()
+{
+    // 'inner()'' hangs on to the 'string' variable.
+    // It "closes" over it.
+    var string = "inner";
+    fun inner()
+    {
+        return string;
+    }
+
+    return inner;
+}
+
+var function = outer();
+print function(); // inner
