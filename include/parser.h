@@ -5,7 +5,7 @@
 #include <typeinfo>
 #include <vector>
 
-#include "error_handler.h"
+#include "error.h"
 #include "syntax_tree/expression.h"
 #include "syntax_tree/statement.h"
 #include "token.h"

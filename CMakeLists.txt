@@ -11,10 +11,21 @@ add_subdirectory(src)
 
 find_package(fmt)
 
-target_compile_options(cpplox PRIVATE -Wall -Wextra -pedantic -Wno-narrowing -Wno-sign-compare
-        -fno-omit-frame-pointer -ggdb)
+set(CXX_COMPILE_FLAGS)
+set(CXX_LINK_FLAGS)
+list(APPEND CXX_COMPILE_FLAGS -Wall -Wextra -pedantic -Wno-narrowing -Wno-sign-compare)
 
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    list(APPEND CXX_COMPILE_FLAGS -fno-omit-frame-pointer
+            -fno-optimize-sibling-calls -fsanitize=address)
+    list(APPEND CXX_LINK_FLAGS -fsanitize=address
+            -fno-omit-frame-pointer -fno-optimize-sibling-calls)
+elseif(CMAKE_BUILD_TYPE MATCHES Release)
+    list(APPEND CXX_COMPILE_FLAGS -O3)
+endif()
+
+target_compile_options(cpplox PRIVATE ${CXX_COMPILE_FLAGS})
+target_link_options(cpplox PRIVATE ${CXX_LINK_FLAGS})
 target_include_directories(cpplox PRIVATE SYSTEM
         "include")
-
 target_link_libraries(cpplox fmt::fmt)

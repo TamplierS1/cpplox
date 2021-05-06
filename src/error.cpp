@@ -1,4 +1,4 @@
-#include "error_handler.h"
+#include "error.h"
 
 namespace cpplox
 {
@@ -12,7 +12,9 @@ const char* RuntimeError::what() const noexcept
     return m_msg.c_str();
 }
 
-void ErrorHandler::error(const Token& token, const std::string& msg)
+namespace ReportError
+{
+void error(const Token& token, std::string_view msg)
 {
     std::string formatted_line = format_msg(token, fmt::color::red);
 
@@ -22,18 +24,18 @@ void ErrorHandler::error(const Token& token, const std::string& msg)
         report_error(token.line(), token.column(), token.lexeme(), formatted_line, msg);
 }
 
-void ErrorHandler::error(int line, int column, char character, const std::string& src_str, const std::string& msg)
+void error(int line, int column, char character, std::string_view src_str, std::string_view msg)
 {
     report_error(line, column, std::string(1, character), src_str, msg);
 }
 
-void ErrorHandler::runtime_error(const RuntimeError& error)
+void runtime_error(const RuntimeError& run_error)
 {
-    this->error(error.m_op, error.m_msg);
-    m_had_runtime_error = true;
+    error(run_error.m_op, run_error.m_msg);
+    g_had_runtime_error = true;
 }
 
-void ErrorHandler::debug_error(const std::string& msg, int line)
+void debug_error(std::string_view msg, int line)
 {
     fmt::print("\n[line {}]", line);
     fmt::print(fmt::emphasis::italic | fg(fmt::color::red), " Internal error in ");
@@ -41,18 +43,18 @@ void ErrorHandler::debug_error(const std::string& msg, int line)
     fmt::print(fmt::emphasis::bold | fg(fmt::color::white), "\t{}\n\n", msg);
 }
 
-void ErrorHandler::warning(const std::string& msg) const
+void warning(std::string_view msg)
 {
     fmt::print(fmt::emphasis::italic | fg(fmt::color::yellow), " Warning: {}\n\n", msg);
 }
 
-void ErrorHandler::warning(const Token& token, const std::string& msg) const
+void warning(const Token& token, const std::string& msg)
 {
     std::string formatted_line = format_msg(token, fmt::color::yellow);
     report_warning(token.line(), token.column(), token.lexeme(), formatted_line, msg);
 }
 
-std::string ErrorHandler::format_msg(const Token& token, fmt::color token_color) const
+std::string format_msg(const Token& token, fmt::color token_color)
 {
     std::string source_line = token.str_line();
 
@@ -83,25 +85,25 @@ std::string ErrorHandler::format_msg(const Token& token, fmt::color token_color)
     return before_token_line + token_str + after_token_line;
 }
 
-void ErrorHandler::report_error(int line, int column, const std::string& where, const std::string& src_str,
-                                const std::string& msg)
+void report_error(int line, int column, std::string_view where, std::string_view src_str, std::string_view msg)
 {
     fmt::print("\n[{}, {}]", line, column);
     fmt::print(fmt::emphasis::italic | fg(fmt::color::red), " Error at '");
     fmt::print(fmt::emphasis::bold | fg(fmt::color::white), "{}", where);
     fmt::print(fmt::emphasis::italic | fg(fmt::color::red), "': {}\n\n", msg);
     fmt::print(fg(fmt::color::dark_olive_green), "\t{}\n\n", src_str);
-    m_had_error = true;
+    g_had_error = true;
 }
 
-void ErrorHandler::report_warning(int line, int column, const std::string& where, const std::string& src_str,
-                                  const std::string& msg) const
+void report_warning(int line, int column, std::string_view where, std::string_view src_str, std::string_view msg)
 {
     fmt::print("\n[{}, {}]", line, column);
     fmt::print(fmt::emphasis::italic | fg(fmt::color::yellow), " Warning at '");
     fmt::print(fmt::emphasis::bold | fg(fmt::color::white), "{}", where);
     fmt::print(fmt::emphasis::italic | fg(fmt::color::yellow), "': {}\n\n", msg);
     fmt::print(fg(fmt::color::dark_olive_green), "\t{}\n\n", src_str);
+}
+
 }
 
 }

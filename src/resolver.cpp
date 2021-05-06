@@ -393,21 +393,21 @@ void Resolver::import_module(const Token &name)
     Parser parser{tokens.value()};
     std::optional<std::vector<StatementPtr>> statements = parser.parse();
     // TODO: turn return codes into enums
-    if (ErrorHandler::get_instance().m_had_error)
+    if (ReportError::g_had_error)
         std::exit(65);
 
-    // We store the modules' name here to prevent circular dependency that would
+    // We store the modules' name to prevent circular dependency that would otherwise
     // make our interpreter crash
     m_imported_modules.push_back(name.lexeme());
 
     resolve(statements.value());
-    if (ErrorHandler::get_instance().m_had_error)
+    if (ReportError::g_had_error)
         std::exit(65);
 
     m_interpreter.lock()->add_statements(statements.value());
 }
 
-bool Resolver::is_imported(const std::string &name)
+bool Resolver::is_imported(std::string_view name)
 {
     return std::find(m_imported_modules.begin(), m_imported_modules.end(), name) != m_imported_modules.end();
 }
@@ -415,6 +415,7 @@ bool Resolver::is_imported(const std::string &name)
 void Resolver::check_prefixes(stmt::Function *function, FunctionType type)
 {
     // TODO: extend this method when you add new prefixes
+    // TODO: replace with switch
     if (type == FunctionType::FUNCTION)
     {
         for (const auto &prefix : function->m_prefix)
@@ -425,14 +426,9 @@ void Resolver::check_prefixes(stmt::Function *function, FunctionType type)
     }
 }
 
-void Resolver::error(const Token &name, const std::string &msg)
+void Resolver::error(const Token &name, std::string_view msg)
 {
-    ErrorHandler::get_instance().error(name, msg);
-}
-
-void Resolver::warning(const Token &name, const std::string &msg)
-{
-    ErrorHandler::get_instance().warning(name, msg);
+    ReportError::error(name, msg);
 }
 
 }

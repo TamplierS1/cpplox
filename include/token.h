@@ -67,13 +67,12 @@ enum class TokenType
 class Token
 {
 public:
-    Token(TokenType type, std::string lexeme, Value literal, int line, const std::string& str_line,
-          int column)
+    Token(TokenType type, std::string lexeme, Value literal, int line, std::string str_line, int column)
         : m_token_type(type)
         , m_lexeme(std::move(lexeme))
         , m_literal(std::move(literal))
         , m_line(line)
-        , m_str_line(str_line)
+        , m_str_line(std::move(str_line))
         , m_column(column)
     {
     }
@@ -107,7 +106,7 @@ public:
     {
         return lhs.m_token_type == rhs.m_token_type && lhs.m_lexeme == rhs.m_lexeme;
     }
-    friend inline bool operator==(const Token& lhs, const std::string& rhs)
+    friend inline bool operator==(const Token& lhs, std::string_view rhs)
     {
         return lhs.m_lexeme == rhs;
     }

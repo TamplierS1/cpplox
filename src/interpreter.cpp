@@ -15,7 +15,7 @@ void Interpreter::interpret()
     }
     catch (RuntimeError &e)
     {
-        ErrorHandler::get_instance().runtime_error(e);
+        ReportError::runtime_error(e);
     }
 }
 

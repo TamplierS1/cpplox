@@ -6,7 +6,7 @@
 #include <sstream>
 #include <vector>
 
-#include "error_handler.h"
+#include "error.h"
 #include "token.h"
 #include "value.h"
 

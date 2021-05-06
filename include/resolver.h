@@ -4,7 +4,7 @@
 #include <deque>
 #include <unordered_map>
 
-#include "error_handler.h"
+#include "error.h"
 #include "interpreter.h"
 #include "parser.h"
 #include "scanner.h"
@@ -41,8 +41,8 @@ class Resolver : public stmt::Visitor, expr::Visitor
     };
 
 public:
-    Resolver(const std::shared_ptr<Interpreter>& interpreter, const std::string& filename,
-                      const std::vector<std::string>& search_paths)
+    Resolver(const std::shared_ptr<Interpreter>& interpreter, std::string_view filename,
+             const std::vector<std::string>& search_paths)
         : m_interpreter(interpreter)
         , m_search_paths(search_paths)
         , m_filename(filename)
@@ -90,13 +90,12 @@ private:
 
     void import_module(const Token& name);
     // Whether the given module was already imported
-    bool is_imported(const std::string& name);
+    bool is_imported(std::string_view name);
 
     // Check if declared prefixes are allowed on a given function
     void check_prefixes(stmt::Function* function, FunctionType type);
 
-    void error(const Token& name, const std::string& msg);
-    void warning(const Token& name, const std::string& msg);
+    void error(const Token& name, std::string_view msg);
 
     // scopes that are currently in scope
     std::deque<Scope> m_scopes;
@@ -105,7 +104,7 @@ private:
     // Relative paths to search for modules
     std::vector<std::string> m_search_paths;
     // The name of the main script
-    const std::string m_filename;
+    std::string_view m_filename;
     // What modules were already imported
     std::vector<std::string> m_imported_modules;
 

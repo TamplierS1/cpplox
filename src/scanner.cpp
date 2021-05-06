@@ -17,16 +17,16 @@ std::optional<std::vector<Token>> Scanner::run_file(const std::string& filename)
         // scan the m_source that contains the script file contents
         run();
 
-        if (ErrorHandler::get_instance().m_had_error)
+        if (ReportError::g_had_error)
             std::exit(65);
-        if (ErrorHandler::get_instance().m_had_runtime_error)
+        if (ReportError::g_had_runtime_error)
             std::exit(70);
 
         return m_tokens;
     }
     catch (std::ifstream::failure& e)
     {
-        ErrorHandler::get_instance().error(1, 1, ' ', "", "Failed to open script file.");
+        ReportError::error(1, 1, ' ', "", "Failed to open script file.");
         return std::nullopt;
     }
 }
@@ -38,8 +38,8 @@ std::vector<Token> Scanner::run_line(const std::string& line)
     m_source = line;
     m_tokens.clear();
 
-    ErrorHandler::get_instance().m_had_error = false;
-    ErrorHandler::get_instance().m_had_runtime_error = false;
+    ReportError::g_had_error = false;
+    ReportError::g_had_runtime_error = false;
 
     run();
 
@@ -147,7 +147,7 @@ void Scanner::scan_token()
             else if (std::isalpha(c))
                 identifier();
             else
-                ErrorHandler::get_instance().error(m_line, m_column, c, m_str_line, "Unexpected character.");
+                ReportError::error(m_line, m_column, c, m_str_line, "Unexpected character.");
             break;
     }
 }
@@ -164,7 +164,7 @@ void Scanner::string()
 
     if (is_end())
     {
-        ErrorHandler::get_instance().error(m_line, m_column, m_source[m_current], m_str_line, "Unterminated string.");
+        ReportError::error(m_line, m_column, m_source[m_current], m_str_line, "Unterminated string.");
     }
 
     // eat the closing quote
@@ -219,8 +219,7 @@ void Scanner::block_comment()
         // if we run out of characters
         if (is_end())
         {
-            ErrorHandler::get_instance().error(m_line, m_column, m_source[m_current], m_str_line,
-                                               "Unclosed block comment.");
+            ReportError::error(m_line, m_column, m_source[m_current], m_str_line, "Unclosed block comment.");
             return;
         }
         if (peek() == '\n')
