@@ -40,7 +40,7 @@ int run_script(const std::string& filename, const std::vector<std::string>& modu
 
     Parser parser{tokens.value()};
     std::optional<std::vector<StatementPtr>> statements = parser.parse();
-    if (ErrorHandler::get_instance().m_had_error || !statements.has_value())
+    if (ReportError::g_had_error || !statements.has_value())
         return 65;
 
     std::deque<StatementPtr> stmts_deque;
@@ -54,7 +54,7 @@ int run_script(const std::string& filename, const std::vector<std::string>& modu
     Resolver resolver{interpreter, take_module_name(filename), modules_dirs};
     resolver.resolve(statements.value());
 
-    if (ErrorHandler::get_instance().m_had_error)
+    if (ReportError::g_had_error)
         return 65;
 
     interpreter->interpret();

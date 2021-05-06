@@ -4,7 +4,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "error_handler.h"
+#include "error.h"
 #include "value.h"
 
 namespace cpplox

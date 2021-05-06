@@ -561,7 +561,7 @@ Token Parser::previous() const
 
 ParseError Parser::error(const Token& token, const std::string& msg)
 {
-    ErrorHandler::get_instance().error(token, msg);
+    ReportError::error(token, msg);
     return ParseError{};
 }
 

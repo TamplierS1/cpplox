@@ -1,6 +1,6 @@
 #include "value.h"
 
-#include "error_handler.h"
+#include "error.h"
 #include "instance.h"
 
 namespace cpplox
@@ -41,7 +41,7 @@ std::string Value::to_string() const
         case std::variant_npos:
             return "nil";
         default:
-            ErrorHandler::get_instance().debug_error("Error: not every type was handled.", __LINE__);
+            ReportError::debug_error("Error: not every type was handled.", __LINE__);
             return "";
     }
 }
